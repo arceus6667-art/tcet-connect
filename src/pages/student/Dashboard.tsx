@@ -8,7 +8,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
-  GraduationCap, 
   BookOpen, 
   User, 
   LogOut, 
@@ -26,6 +25,7 @@ import { format } from 'date-fns';
 import RevisionContentViewer from '@/components/student/RevisionContentViewer';
 import ExchangeChat from '@/components/student/ExchangeChat';
 import AnimatedBackground from '@/components/ui/AnimatedBackground';
+import tcetLogo from '@/assets/tcet-logo.png';
 
 const StudentDashboard = () => {
   const navigate = useNavigate();
@@ -110,8 +110,8 @@ const StudentDashboard = () => {
       <header className="glass-card border-b sticky top-0 z-20">
         <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-gradient-to-br from-primary to-accent rounded-xl flex items-center justify-center shadow-lg">
-              <GraduationCap className="w-5 h-5 text-primary-foreground" />
+            <div className="w-10 h-10 rounded-full flex items-center justify-center overflow-hidden bg-white shadow-lg">
+              <img src={tcetLogo} alt="TCET Logo" className="w-8 h-8 object-contain" />
             </div>
             <div>
               <h1 className="font-bold text-lg text-gradient">TCET Book Exchange</h1>
