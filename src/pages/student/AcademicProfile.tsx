@@ -85,8 +85,8 @@ const AcademicProfile = () => {
     }
 
     const rollNum = parseInt(rollNumber);
-    if (isNaN(rollNum) || rollNum < 1 || rollNum > 100) {
-      toast.error('Roll number must be between 1 and 100');
+    if (isNaN(rollNum) || rollNum < 1 || rollNum > 63) {
+      toast.error('Roll number must be between 1 and 63');
       return;
     }
 
@@ -216,8 +216,8 @@ const AcademicProfile = () => {
                     id="rollNumber"
                     type="number"
                     min="1"
-                    max="100"
-                    placeholder="Enter roll number (1-100)"
+                    max="63"
+                    placeholder="Enter roll number (1-63)"
                     value={rollNumber}
                     onChange={(e) => setRollNumber(e.target.value)}
                     required
