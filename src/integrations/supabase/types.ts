@@ -32,6 +32,149 @@ export type Database = {
         }
         Relationships: []
       }
+      exchange_locations: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+        }
+        Relationships: []
+      }
+      exchange_matches: {
+        Row: {
+          academic_year: string
+          admin_approved: boolean | null
+          completed_at: string | null
+          confirmed_at: string | null
+          created_at: string
+          id: string
+          location_id: string | null
+          match_status: string
+          matched_at: string
+          semester: string
+          student_1_confirmed: boolean | null
+          student_1_id: string
+          student_2_confirmed: boolean | null
+          student_2_id: string
+          time_slot_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          academic_year: string
+          admin_approved?: boolean | null
+          completed_at?: string | null
+          confirmed_at?: string | null
+          created_at?: string
+          id?: string
+          location_id?: string | null
+          match_status?: string
+          matched_at?: string
+          semester: string
+          student_1_confirmed?: boolean | null
+          student_1_id: string
+          student_2_confirmed?: boolean | null
+          student_2_id: string
+          time_slot_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          academic_year?: string
+          admin_approved?: boolean | null
+          completed_at?: string | null
+          confirmed_at?: string | null
+          created_at?: string
+          id?: string
+          location_id?: string | null
+          match_status?: string
+          matched_at?: string
+          semester?: string
+          student_1_confirmed?: boolean | null
+          student_1_id?: string
+          student_2_confirmed?: boolean | null
+          student_2_id?: string
+          time_slot_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "exchange_matches_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "exchange_locations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "exchange_matches_time_slot_id_fkey"
+            columns: ["time_slot_id"]
+            isOneToOne: false
+            referencedRelation: "exchange_time_slots"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      exchange_time_slots: {
+        Row: {
+          created_at: string
+          current_exchanges: number | null
+          date: string
+          end_time: string
+          id: string
+          is_active: boolean | null
+          location_id: string | null
+          max_exchanges: number | null
+          period: Database["public"]["Enums"]["time_slot_period"]
+          start_time: string
+        }
+        Insert: {
+          created_at?: string
+          current_exchanges?: number | null
+          date: string
+          end_time: string
+          id?: string
+          is_active?: boolean | null
+          location_id?: string | null
+          max_exchanges?: number | null
+          period: Database["public"]["Enums"]["time_slot_period"]
+          start_time: string
+        }
+        Update: {
+          created_at?: string
+          current_exchanges?: number | null
+          date?: string
+          end_time?: string
+          id?: string
+          is_active?: boolean | null
+          location_id?: string | null
+          max_exchanges?: number | null
+          period?: Database["public"]["Enums"]["time_slot_period"]
+          start_time?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "exchange_time_slots_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "exchange_locations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -148,6 +291,13 @@ export type Database = {
       determine_slot: { Args: { roll_num: number }; Returns: number }
       get_books_owned: { Args: { slot_num: number }; Returns: string[] }
       get_books_required: { Args: { slot_num: number }; Returns: string[] }
+      get_current_semester: {
+        Args: never
+        Returns: {
+          academic_year: string
+          semester: string
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -156,6 +306,10 @@ export type Database = {
         Returns: boolean
       }
       is_approved_admin_email: { Args: { _email: string }; Returns: boolean }
+      is_student_matched_this_semester: {
+        Args: { _user_id: string }
+        Returns: boolean
+      }
     }
     Enums: {
       app_role: "student" | "teacher" | "admin"
@@ -166,6 +320,7 @@ export type Database = {
         | "matched"
         | "completed"
         | "cancelled"
+      time_slot_period: "morning" | "afternoon" | "evening"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -302,6 +457,7 @@ export const Constants = {
         "completed",
         "cancelled",
       ],
+      time_slot_period: ["morning", "afternoon", "evening"],
     },
   },
 } as const

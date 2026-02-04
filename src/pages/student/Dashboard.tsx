@@ -2,10 +2,10 @@ import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useProfile, useStudentAcademicInfo, useUserRole } from '@/hooks/useUserRole';
+import { useExchangeMatch, useConfirmExchange } from '@/hooks/useExchangeMatch';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-
 import { 
   GraduationCap, 
   BookOpen, 
@@ -14,8 +14,13 @@ import {
   Clock, 
   CheckCircle, 
   AlertCircle,
-  ArrowLeftRight 
+  ArrowLeftRight,
+  MapPin,
+  Calendar,
+  UserCheck,
+  Mail
 } from 'lucide-react';
+import { format } from 'date-fns';
 
 const StudentDashboard = () => {
   const navigate = useNavigate();
@@ -23,6 +28,8 @@ const StudentDashboard = () => {
   const { data: profile, isLoading: profileLoading } = useProfile();
   const { data: academicInfo, isLoading: academicLoading } = useStudentAcademicInfo();
   const { data: userRole, isLoading: roleLoading } = useUserRole();
+  const { data: exchangeMatch, isLoading: matchLoading } = useExchangeMatch();
+  const confirmExchange = useConfirmExchange();
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -31,13 +38,11 @@ const StudentDashboard = () => {
     }
 
     if (!roleLoading && userRole && userRole.role !== 'student') {
-      // Redirect to appropriate dashboard
       navigate(userRole.role === 'teacher' ? '/teacher/dashboard' : '/admin/dashboard');
       return;
     }
 
     if (!academicLoading && !academicInfo && user) {
-      // Academic profile not completed
       navigate('/student/academic-profile');
     }
   }, [authLoading, user, academicLoading, academicInfo, roleLoading, userRole, navigate]);
@@ -47,7 +52,13 @@ const StudentDashboard = () => {
     navigate('/auth');
   };
 
-  const isLoading = authLoading || profileLoading || academicLoading || roleLoading;
+  const handleConfirmExchange = () => {
+    if (exchangeMatch?.match.id) {
+      confirmExchange.mutate(exchangeMatch.match.id);
+    }
+  };
+
+  const isLoading = authLoading || profileLoading || academicLoading || roleLoading || matchLoading;
 
   if (isLoading) {
     return (
@@ -64,7 +75,9 @@ const StudentDashboard = () => {
       case 'requested':
         return <Badge variant="outline" className="gap-1"><ArrowLeftRight className="w-3 h-3" /> Requested</Badge>;
       case 'matched':
-        return <Badge className="gap-1 bg-blue-500"><CheckCircle className="w-3 h-3" /> Matched</Badge>;
+        return <Badge className="gap-1 bg-blue-500"><UserCheck className="w-3 h-3" /> Matched</Badge>;
+      case 'confirmed':
+        return <Badge className="gap-1 bg-purple-500"><CheckCircle className="w-3 h-3" /> Confirmed</Badge>;
       case 'completed':
         return <Badge className="gap-1 bg-green-500"><CheckCircle className="w-3 h-3" /> Completed</Badge>;
       case 'cancelled':
@@ -73,6 +86,14 @@ const StudentDashboard = () => {
         return <Badge variant="secondary">{status}</Badge>;
     }
   };
+
+  const hasConfirmed = exchangeMatch?.isStudent1 
+    ? exchangeMatch.match.student_1_confirmed 
+    : exchangeMatch?.match.student_2_confirmed;
+
+  const partnerHasConfirmed = exchangeMatch?.isStudent1 
+    ? exchangeMatch.match.student_2_confirmed 
+    : exchangeMatch?.match.student_1_confirmed;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-secondary/5">
@@ -143,11 +164,182 @@ const StudentDashboard = () => {
                 {getStatusBadge(academicInfo?.exchange_status || 'pending')}
               </div>
               <p className="text-sm text-muted-foreground mt-2">
-                Your current exchange request status
+                {exchangeMatch ? 'You have been matched!' : 'Waiting for a match...'}
               </p>
             </CardContent>
           </Card>
         </div>
+
+        {/* Exchange Match Details */}
+        {exchangeMatch && (
+          <Card className="border-2 border-primary/20 bg-primary/5">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <UserCheck className="w-6 h-6 text-primary" />
+                  <CardTitle>Exchange Partner Found!</CardTitle>
+                </div>
+                {getStatusBadge(exchangeMatch.match.match_status)}
+              </div>
+              <CardDescription>
+                You have been matched with a Slot {exchangeMatch.partnerAcademic.slot} student
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {/* Partner Details */}
+              <div className="grid md:grid-cols-2 gap-6">
+                <div className="space-y-4">
+                  <h4 className="font-semibold flex items-center gap-2">
+                    <User className="w-4 h-4" />
+                    Partner Details
+                  </h4>
+                  <div className="space-y-2 bg-background p-4 rounded-lg">
+                    <div className="flex items-center gap-2">
+                      <span className="text-muted-foreground">Name:</span>
+                      <span className="font-medium">{exchangeMatch.partner.full_name}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Mail className="w-4 h-4 text-muted-foreground" />
+                      <a href={`mailto:${exchangeMatch.partner.email}`} className="text-primary hover:underline">
+                        {exchangeMatch.partner.email}
+                      </a>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-muted-foreground">Branch:</span>
+                      <span>{exchangeMatch.partnerAcademic.branch} - Division {exchangeMatch.partnerAcademic.division}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-muted-foreground">Roll No:</span>
+                      <span>{exchangeMatch.partnerAcademic.roll_number}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-muted-foreground">Slot:</span>
+                      <Badge variant="outline">Slot {exchangeMatch.partnerAcademic.slot}</Badge>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Time Slot & Location */}
+                <div className="space-y-4">
+                  <h4 className="font-semibold flex items-center gap-2">
+                    <Calendar className="w-4 h-4" />
+                    Exchange Schedule
+                  </h4>
+                  <div className="space-y-2 bg-background p-4 rounded-lg">
+                    {exchangeMatch.timeSlot ? (
+                      <>
+                        <div className="flex items-center gap-2">
+                          <Calendar className="w-4 h-4 text-muted-foreground" />
+                          <span className="font-medium">
+                            {format(new Date(exchangeMatch.timeSlot.date), 'EEEE, MMMM d, yyyy')}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Clock className="w-4 h-4 text-muted-foreground" />
+                          <span>
+                            {exchangeMatch.timeSlot.start_time.slice(0, 5)} - {exchangeMatch.timeSlot.end_time.slice(0, 5)}
+                          </span>
+                          <Badge variant="secondary" className="capitalize">
+                            {exchangeMatch.timeSlot.period}
+                          </Badge>
+                        </div>
+                      </>
+                    ) : (
+                      <p className="text-muted-foreground">Time slot not assigned yet</p>
+                    )}
+                    
+                    {exchangeMatch.location && (
+                      <div className="flex items-start gap-2 mt-2">
+                        <MapPin className="w-4 h-4 text-muted-foreground mt-0.5" />
+                        <div>
+                          <p className="font-medium">{exchangeMatch.location.name}</p>
+                          <p className="text-sm text-muted-foreground">{exchangeMatch.location.description}</p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Books to Exchange */}
+              <div className="grid md:grid-cols-2 gap-4">
+                <div className="p-4 bg-green-50 dark:bg-green-900/20 rounded-lg">
+                  <h5 className="font-medium text-green-700 dark:text-green-300 mb-2">
+                    Books You Will Give
+                  </h5>
+                  <ul className="text-sm space-y-1">
+                    {academicInfo?.books_owned?.map((book, i) => (
+                      <li key={i} className="flex items-center gap-2">
+                        <ArrowLeftRight className="w-3 h-3" />
+                        {book}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+                <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                  <h5 className="font-medium text-blue-700 dark:text-blue-300 mb-2">
+                    Books You Will Receive
+                  </h5>
+                  <ul className="text-sm space-y-1">
+                    {exchangeMatch.partnerAcademic.books_owned?.map((book, i) => (
+                      <li key={i} className="flex items-center gap-2">
+                        <ArrowLeftRight className="w-3 h-3" />
+                        {book}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+
+              {/* Confirmation Status */}
+              <div className="flex items-center justify-between p-4 bg-background rounded-lg border">
+                <div className="space-y-1">
+                  <p className="font-medium">Confirmation Status</p>
+                  <div className="flex gap-4 text-sm">
+                    <span className={hasConfirmed ? 'text-green-600' : 'text-muted-foreground'}>
+                      You: {hasConfirmed ? '✓ Confirmed' : 'Not confirmed'}
+                    </span>
+                    <span className={partnerHasConfirmed ? 'text-green-600' : 'text-muted-foreground'}>
+                      Partner: {partnerHasConfirmed ? '✓ Confirmed' : 'Not confirmed'}
+                    </span>
+                  </div>
+                </div>
+                
+                {exchangeMatch.match.match_status === 'matched' && !hasConfirmed && (
+                  <Button 
+                    onClick={handleConfirmExchange}
+                    disabled={confirmExchange.isPending}
+                  >
+                    {confirmExchange.isPending ? 'Confirming...' : 'Confirm Exchange'}
+                  </Button>
+                )}
+                
+                {exchangeMatch.match.match_status === 'confirmed' && (
+                  <Badge className="bg-purple-500">Awaiting Admin Approval</Badge>
+                )}
+                
+                {exchangeMatch.match.match_status === 'completed' && (
+                  <Badge className="bg-green-500">Exchange Completed!</Badge>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* No Match Yet */}
+        {!exchangeMatch && academicInfo?.exchange_status === 'pending' && (
+          <Card className="border-dashed">
+            <CardHeader className="text-center">
+              <div className="mx-auto w-16 h-16 bg-muted rounded-full flex items-center justify-center mb-4">
+                <ArrowLeftRight className="w-8 h-8 text-muted-foreground" />
+              </div>
+              <CardTitle>Waiting for Match</CardTitle>
+              <CardDescription>
+                The system is scanning for compatible exchange partners. You'll be notified when a match is found.
+              </CardDescription>
+            </CardHeader>
+          </Card>
+        )}
 
         {/* Books Section */}
         <div className="grid md:grid-cols-2 gap-6">
@@ -208,7 +400,8 @@ const StudentDashboard = () => {
             <ul className="space-y-2 list-disc pl-5">
               <li><strong>Maths 1 and Maths 2</strong> are non-exchangeable and must be purchased separately.</li>
               <li>Book ownership is determined by your roll number and cannot be manually changed.</li>
-              <li>Your exchange status will be updated by the administration.</li>
+              <li>You can only be matched once per semester.</li>
+              <li>Both students must confirm the exchange for it to be completed.</li>
             </ul>
           </CardContent>
         </Card>
