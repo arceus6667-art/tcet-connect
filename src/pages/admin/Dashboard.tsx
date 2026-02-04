@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Shield, LogOut, Users, BarChart3, ArrowLeftRight, Play, RefreshCw, BookOpen } from 'lucide-react';
+import { LogOut, Users, BarChart3, ArrowLeftRight, Play, RefreshCw, BookOpen } from 'lucide-react';
 import { toast } from 'sonner';
 import { useQueryClient } from '@tanstack/react-query';
 import AdminUsersPage from '@/components/admin/AdminUsersPage';
@@ -16,6 +16,7 @@ import AdminExchangesPage from '@/components/admin/AdminExchangesPage';
 import AdminAnalyticsPage from '@/components/admin/AdminAnalyticsPage';
 import AdminContentPage from '@/components/admin/AdminContentPage';
 import AnimatedBackground from '@/components/ui/AnimatedBackground';
+import tcetLogo from '@/assets/tcet-logo.png';
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
@@ -107,8 +108,8 @@ const AdminDashboard = () => {
       <header className="glass-card border-b sticky top-0 z-20">
         <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-gradient-to-br from-accent to-primary rounded-xl flex items-center justify-center shadow-lg">
-              <Shield className="w-5 h-5 text-primary-foreground" />
+            <div className="w-10 h-10 rounded-full flex items-center justify-center overflow-hidden bg-white shadow-lg">
+              <img src={tcetLogo} alt="TCET Logo" className="w-8 h-8 object-contain" />
             </div>
             <div>
               <h1 className="font-bold text-lg text-gradient">TCET Book Exchange</h1>
