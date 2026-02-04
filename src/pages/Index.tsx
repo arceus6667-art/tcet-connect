@@ -4,7 +4,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useUserRole, useProfile } from '@/hooks/useUserRole';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { GraduationCap, BookOpen, ArrowRight } from 'lucide-react';
+import { BookOpen, ArrowRight } from 'lucide-react';
+import tcetLogo from '@/assets/tcet-logo.png';
 
 const Index = () => {
   const navigate = useNavigate();
@@ -38,8 +39,8 @@ const Index = () => {
       {/* Hero Section */}
       <div className="max-w-7xl mx-auto px-4 py-16 md:py-24">
         <div className="text-center space-y-6">
-          <div className="mx-auto w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center">
-            <GraduationCap className="w-10 h-10 text-primary" />
+          <div className="mx-auto w-24 h-24 rounded-full flex items-center justify-center overflow-hidden bg-white shadow-lg">
+            <img src={tcetLogo} alt="TCET Logo" className="w-20 h-20 object-contain" />
           </div>
           <h1 className="text-4xl md:text-6xl font-bold tracking-tight">
             TCET Book Exchange
