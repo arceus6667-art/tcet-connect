@@ -23,8 +23,27 @@ const Onboarding = () => {
   const [email, setEmail] = useState(user?.email || '');
   const [selectedRole, setSelectedRole] = useState<AppRole>('student');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isApprovedAdmin, setIsApprovedAdmin] = useState(false);
 
   const isTCETEmail = email.endsWith('@tcetmumbai.in');
+  
+  // Check if email is an approved admin email
+  useEffect(() => {
+    const checkApprovedAdmin = async () => {
+      if (!email) {
+        setIsApprovedAdmin(false);
+        return;
+      }
+      
+      const { data } = await supabase.rpc('is_approved_admin_email', { _email: email });
+      setIsApprovedAdmin(!!data);
+    };
+    
+    checkApprovedAdmin();
+  }, [email]);
+  
+  // Allow registration if TCET email OR approved admin email
+  const canRegister = isTCETEmail || isApprovedAdmin;
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -84,9 +103,15 @@ const Onboarding = () => {
       return;
     }
 
-    // Validate TCET email domain
-    if (!isTCETEmail) {
-      toast.error('Only @tcetmumbai.in email addresses are allowed to create profiles');
+    // Validate TCET email domain OR approved admin email
+    if (!canRegister) {
+      toast.error('Only @tcetmumbai.in email addresses or pre-approved admin emails are allowed to register');
+      return;
+    }
+    
+    // If not a TCET email but trying to register as student/teacher, block it
+    if (!isTCETEmail && selectedRole !== 'admin') {
+      toast.error('Non-TCET emails can only register as Admin (if pre-approved)');
       return;
     }
 
@@ -189,15 +214,28 @@ const Onboarding = () => {
             </CardDescription>
           </CardHeader>
           <CardContent className="pb-8">
-            {/* TCET Email Validation Warning */}
-            {!isTCETEmail && (
+            {/* Email Validation Notice */}
+            {!isTCETEmail && !isApprovedAdmin && (
               <div className="mb-6 p-4 bg-destructive/10 border border-destructive/20 rounded-lg flex items-start gap-3">
                 <AlertCircle className="w-5 h-5 text-destructive flex-shrink-0 mt-0.5" />
                 <div>
                   <p className="font-medium text-destructive">Invalid Email Domain</p>
                   <p className="text-sm text-muted-foreground mt-1">
                     Only <strong>@tcetmumbai.in</strong> email addresses are allowed to register. 
-                    Please enter your official TCET G-Suite email below.
+                    Pre-approved admin emails can also register as Admin.
+                  </p>
+                </div>
+              </div>
+            )}
+            
+            {/* Approved Admin Notice */}
+            {isApprovedAdmin && !isTCETEmail && (
+              <div className="mb-6 p-4 bg-success/10 border border-success/20 rounded-lg flex items-start gap-3">
+                <Shield className="w-5 h-5 text-success flex-shrink-0 mt-0.5" />
+                <div>
+                  <p className="font-medium text-success">Pre-Approved Admin Email</p>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    This email is pre-approved for admin access. Please select <strong>Admin</strong> role below.
                   </p>
                 </div>
               </div>
@@ -221,6 +259,12 @@ const Onboarding = () => {
                     Valid TCET email
                   </p>
                 )}
+                {isApprovedAdmin && !isTCETEmail && (
+                  <p className="text-xs text-success flex items-center gap-1">
+                    <Shield className="w-3 h-3" />
+                    Pre-approved admin email
+                  </p>
+                )}
               </div>
 
               <div className="space-y-2">
@@ -232,7 +276,7 @@ const Onboarding = () => {
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
                   required
-                  disabled={!isTCETEmail}
+                  disabled={!canRegister}
                   className="h-12"
                 />
               </div>
@@ -243,7 +287,7 @@ const Onboarding = () => {
                   value={selectedRole}
                   onValueChange={(value) => setSelectedRole(value as AppRole)}
                   className="grid gap-3"
-                  disabled={!isTCETEmail}
+                  disabled={!canRegister}
                 >
                   <div className={`flex items-center space-x-3 p-4 border rounded-xl hover:bg-primary/5 cursor-pointer transition-all ${selectedRole === 'student' ? 'border-primary bg-primary/5 shadow-sm' : 'border-border'}`}>
                     <RadioGroupItem value="student" id="student" />
@@ -289,7 +333,7 @@ const Onboarding = () => {
               <Button 
                 type="submit" 
                 className="w-full h-12 bg-gradient-to-r from-primary to-accent hover:opacity-90 transition-opacity shadow-lg" 
-                disabled={isSubmitting || !isTCETEmail}
+                disabled={isSubmitting || !canRegister}
               >
                 {isSubmitting ? (
                   <span className="flex items-center gap-2">

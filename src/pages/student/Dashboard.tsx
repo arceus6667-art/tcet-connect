@@ -24,6 +24,7 @@ import {
 } from 'lucide-react';
 import { format } from 'date-fns';
 import RevisionContentViewer from '@/components/student/RevisionContentViewer';
+import ExchangeChat from '@/components/student/ExchangeChat';
 import AnimatedBackground from '@/components/ui/AnimatedBackground';
 
 const StudentDashboard = () => {
@@ -346,6 +347,16 @@ const StudentDashboard = () => {
               </div>
             </CardContent>
           </Card>
+        )}
+
+        {/* Chat with Exchange Partner */}
+        {exchangeMatch && (
+          <ExchangeChat
+            matchId={exchangeMatch.match.id}
+            partnerId={exchangeMatch.isStudent1 ? exchangeMatch.match.student_2_id : exchangeMatch.match.student_1_id}
+            partnerName={exchangeMatch.partner.full_name}
+            partnerEmail={exchangeMatch.partner.email}
+          />
         )}
 
         {/* No Match Yet */}
