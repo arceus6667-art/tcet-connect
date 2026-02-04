@@ -4,10 +4,11 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useProfile, useUserRole } from '@/hooks/useUserRole';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { BookOpen, LogOut, BarChart3, FileText } from 'lucide-react';
+import { LogOut, BarChart3, FileText } from 'lucide-react';
 import TeacherStatsCard from '@/components/teacher/TeacherStatsCard';
 import ContentManager from '@/components/teacher/ContentManager';
 import AnimatedBackground from '@/components/ui/AnimatedBackground';
+import tcetLogo from '@/assets/tcet-logo.png';
 
 const TeacherDashboard = () => {
   const navigate = useNavigate();
@@ -51,8 +52,8 @@ const TeacherDashboard = () => {
       <header className="glass-card border-b sticky top-0 z-20">
         <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-gradient-to-br from-secondary to-primary rounded-xl flex items-center justify-center shadow-lg">
-              <BookOpen className="w-5 h-5 text-primary-foreground" />
+            <div className="w-10 h-10 rounded-full flex items-center justify-center overflow-hidden bg-white shadow-lg">
+              <img src={tcetLogo} alt="TCET Logo" className="w-8 h-8 object-contain" />
             </div>
             <div>
               <h1 className="font-bold text-lg text-gradient">TCET Book Exchange</h1>
