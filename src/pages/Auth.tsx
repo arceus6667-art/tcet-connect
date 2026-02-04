@@ -9,9 +9,10 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
-import { GraduationCap, Sparkles, BookOpen, ArrowRight, Mail, Lock, Wand2 } from 'lucide-react';
+import { Sparkles, BookOpen, ArrowRight, Mail, Lock, Wand2 } from 'lucide-react';
 import AnimatedBackground from '@/components/ui/AnimatedBackground';
 import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp';
+import tcetLogo from '@/assets/tcet-logo.png';
 
 const Auth = () => {
   const navigate = useNavigate();
@@ -198,8 +199,8 @@ const Auth = () => {
           <div className="h-1 w-full animated-gradient-bg" />
           
           <CardHeader className="text-center space-y-4 sm:space-y-6 pt-6 sm:pt-8 pb-2 sm:pb-4 px-4 sm:px-6">
-            <div className="mx-auto w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-br from-primary to-accent rounded-xl sm:rounded-2xl flex items-center justify-center shadow-lg glow-primary transform hover:scale-105 transition-transform">
-              <GraduationCap className="w-8 h-8 sm:w-10 sm:h-10 text-primary-foreground" />
+            <div className="mx-auto w-20 h-20 sm:w-24 sm:h-24 rounded-full flex items-center justify-center overflow-hidden bg-white shadow-lg transform hover:scale-105 transition-transform">
+              <img src={tcetLogo} alt="TCET Logo" className="w-16 h-16 sm:w-20 sm:h-20 object-contain" />
             </div>
             
             <div className="space-y-1 sm:space-y-2">
