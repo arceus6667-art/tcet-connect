@@ -9,7 +9,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
-import { GraduationCap, BookOpen, Info } from 'lucide-react';
+import { GraduationCap, BookOpen, Info, ArrowLeft } from 'lucide-react';
+import AnimatedBackground from '@/components/ui/AnimatedBackground';
 
 const BRANCHES = [
   { value: 'CS', label: 'Computer Science (CS)' },
@@ -23,9 +24,23 @@ const BRANCHES = [
 
 const DIVISIONS = ['A', 'B', 'C', 'D'];
 
+const slot1Books = [
+  'Engineering Mechanics',
+  'Chemistry',
+  'Programming for Problem Solving (PPS)',
+  'Indian Knowledge System (IKS)',
+];
+
+const slot2Books = [
+  'Physics',
+  'Basic Electrical Engineering (BEE)',
+  'Engineering Graphics & Design (EGD)',
+  'English – General & Professional Communication',
+];
+
 const AcademicProfile = () => {
   const navigate = useNavigate();
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading, signOut } = useAuth();
   const { data: academicInfo, isLoading: academicLoading } = useStudentAcademicInfo();
 
   const [branch, setBranch] = useState('');
@@ -36,21 +51,6 @@ const AcademicProfile = () => {
   // Preview of slot and books
   const rollNum = parseInt(rollNumber) || 0;
   const previewSlot = rollNum > 0 ? (rollNum % 2 === 1 ? 1 : 2) : null;
-
-  const slot1Books = [
-    'Engineering Mechanics',
-    'Chemistry',
-    'Programming for Problem Solving (PPS)',
-    'Indian Knowledge System (IKS)',
-  ];
-
-  const slot2Books = [
-    'Physics',
-    'Basic Electrical Engineering (BEE)',
-    'Engineering Graphics & Design (EGD)',
-    'English – General & Professional Communication',
-  ];
-
   const previewBooksOwned = previewSlot === 1 ? slot1Books : previewSlot === 2 ? slot2Books : [];
   const previewBooksRequired = previewSlot === 1 ? slot2Books : previewSlot === 2 ? slot1Books : [];
 
@@ -61,7 +61,6 @@ const AcademicProfile = () => {
     }
 
     if (!academicLoading && academicInfo) {
-      // Already has academic info, redirect to dashboard
       navigate('/student/dashboard');
     }
   }, [authLoading, user, academicLoading, academicInfo, navigate]);
@@ -88,7 +87,6 @@ const AcademicProfile = () => {
     setIsSubmitting(true);
 
     try {
-      // Calculate slot (backend will also calculate via trigger, but we do it here for immediate feedback)
       const slot = rollNum % 2 === 1 ? 1 : 2;
       const booksOwned = slot === 1 ? slot1Books : slot2Books;
       const booksRequired = slot === 1 ? slot2Books : slot1Books;
@@ -124,34 +122,53 @@ const AcademicProfile = () => {
     }
   };
 
+  const handleBack = async () => {
+    await signOut();
+    navigate('/auth');
+  };
+
   if (authLoading || academicLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      <div className="min-h-screen flex items-center justify-center">
+        <AnimatedBackground />
+        <div className="relative z-10 animate-spin rounded-full h-10 w-10 border-b-2 border-primary"></div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary/10 via-background to-secondary/10 p-4">
-      <div className="max-w-4xl mx-auto space-y-6 py-8">
-        <Card className="shadow-xl">
-          <CardHeader className="text-center space-y-4">
-            <div className="mx-auto w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center">
-              <GraduationCap className="w-8 h-8 text-primary" />
+    <div className="min-h-screen p-4 relative overflow-hidden">
+      <AnimatedBackground />
+
+      {/* Back button */}
+      <div className="relative z-10 max-w-4xl mx-auto pt-4">
+        <Button variant="ghost" onClick={handleBack} className="gap-2 mb-4">
+          <ArrowLeft className="w-4 h-4" />
+          Sign out
+        </Button>
+      </div>
+
+      <div className="relative z-10 max-w-4xl mx-auto space-y-6 pb-8 animate-fade-in">
+        <Card className="glass-card shadow-2xl border-0 overflow-hidden">
+          {/* Gradient top border */}
+          <div className="h-1 w-full animated-gradient-bg" />
+
+          <CardHeader className="text-center space-y-4 pt-8">
+            <div className="mx-auto w-16 h-16 bg-gradient-to-br from-primary to-secondary rounded-2xl flex items-center justify-center shadow-lg transform hover:scale-105 transition-transform">
+              <GraduationCap className="w-8 h-8 text-primary-foreground" />
             </div>
-            <CardTitle className="text-2xl font-bold">Academic Profile</CardTitle>
+            <CardTitle className="text-2xl font-bold text-gradient">Academic Profile</CardTitle>
             <CardDescription className="text-base">
               Enter your academic details to determine your book slot assignment
             </CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className="pb-8">
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="grid md:grid-cols-3 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="branch">Branch</Label>
+                  <Label htmlFor="branch" className="text-sm font-medium">Branch</Label>
                   <Select value={branch} onValueChange={setBranch}>
-                    <SelectTrigger>
+                    <SelectTrigger className="h-12">
                       <SelectValue placeholder="Select branch" />
                     </SelectTrigger>
                     <SelectContent>
@@ -165,9 +182,9 @@ const AcademicProfile = () => {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="division">Division</Label>
+                  <Label htmlFor="division" className="text-sm font-medium">Division</Label>
                   <Select value={division} onValueChange={setDivision}>
-                    <SelectTrigger>
+                    <SelectTrigger className="h-12">
                       <SelectValue placeholder="Select division" />
                     </SelectTrigger>
                     <SelectContent>
@@ -181,7 +198,7 @@ const AcademicProfile = () => {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="rollNumber">Roll Number</Label>
+                  <Label htmlFor="rollNumber" className="text-sm font-medium">Roll Number</Label>
                   <Input
                     id="rollNumber"
                     type="number"
@@ -191,42 +208,47 @@ const AcademicProfile = () => {
                     value={rollNumber}
                     onChange={(e) => setRollNumber(e.target.value)}
                     required
+                    className="h-12"
                   />
                 </div>
               </div>
 
               {previewSlot && (
-                <div className="space-y-4 p-4 bg-muted/50 rounded-lg">
+                <div className="space-y-4 p-6 bg-gradient-to-r from-primary/5 to-secondary/5 rounded-xl border border-primary/10">
                   <div className="flex items-center gap-2">
-                    <Info className="w-5 h-5 text-primary" />
+                    <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                      <Info className="w-4 h-4 text-primary" />
+                    </div>
                     <p className="font-medium">
-                      Based on your roll number, you are assigned to <strong>Slot {previewSlot}</strong>
+                      Based on your roll number, you are assigned to <span className="text-gradient font-bold">Slot {previewSlot}</span>
                     </p>
                   </div>
 
                   <div className="grid md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
+                    <div className="space-y-3 p-4 bg-success/5 border border-success/20 rounded-xl">
                       <div className="flex items-center gap-2">
-                        <BookOpen className="w-4 h-4 text-green-600" />
-                        <p className="font-medium text-green-600">Books You Own</p>
+                        <BookOpen className="w-4 h-4 text-success" />
+                        <p className="font-medium text-success">Books You Own</p>
                       </div>
-                      <ul className="text-sm space-y-1 pl-6">
+                      <ul className="text-sm space-y-2">
                         {previewBooksOwned.map((book) => (
-                          <li key={book} className="list-disc text-muted-foreground">
+                          <li key={book} className="flex items-start gap-2 text-muted-foreground">
+                            <span className="w-1.5 h-1.5 rounded-full bg-success mt-2 flex-shrink-0" />
                             {book}
                           </li>
                         ))}
                       </ul>
                     </div>
 
-                    <div className="space-y-2">
+                    <div className="space-y-3 p-4 bg-warning/5 border border-warning/20 rounded-xl">
                       <div className="flex items-center gap-2">
-                        <BookOpen className="w-4 h-4 text-orange-600" />
-                        <p className="font-medium text-orange-600">Books You Require</p>
+                        <BookOpen className="w-4 h-4 text-warning" />
+                        <p className="font-medium text-warning">Books You Require</p>
                       </div>
-                      <ul className="text-sm space-y-1 pl-6">
+                      <ul className="text-sm space-y-2">
                         {previewBooksRequired.map((book) => (
-                          <li key={book} className="list-disc text-muted-foreground">
+                          <li key={book} className="flex items-start gap-2 text-muted-foreground">
+                            <span className="w-1.5 h-1.5 rounded-full bg-warning mt-2 flex-shrink-0" />
                             {book}
                           </li>
                         ))}
@@ -234,16 +256,27 @@ const AcademicProfile = () => {
                     </div>
                   </div>
 
-                  <div className="p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
-                    <p className="text-sm text-yellow-800 dark:text-yellow-200">
-                      <strong>Note:</strong> Maths 1 and Maths 2 are non-exchangeable and not included in the book exchange system.
+                  <div className="p-4 bg-accent/10 border border-accent/20 rounded-lg">
+                    <p className="text-sm text-muted-foreground">
+                      <strong className="text-accent">Note:</strong> Maths 1 and Maths 2 are non-exchangeable and not included in the book exchange system.
                     </p>
                   </div>
                 </div>
               )}
 
-              <Button type="submit" className="w-full h-12" disabled={isSubmitting}>
-                {isSubmitting ? 'Saving...' : 'Save Academic Profile'}
+              <Button 
+                type="submit" 
+                className="w-full h-12 bg-gradient-to-r from-primary to-accent hover:opacity-90 transition-opacity shadow-lg" 
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? (
+                  <span className="flex items-center gap-2">
+                    <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                    Saving...
+                  </span>
+                ) : (
+                  'Save Academic Profile'
+                )}
               </Button>
             </form>
           </CardContent>

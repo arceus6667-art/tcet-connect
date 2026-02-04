@@ -9,7 +9,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { toast } from 'sonner';
-import { GraduationCap, User, BookOpen, Shield } from 'lucide-react';
+import { GraduationCap, User, BookOpen, Shield, AlertCircle } from 'lucide-react';
+import AnimatedBackground from '@/components/ui/AnimatedBackground';
 import type { AppRole } from '@/hooks/useUserRole';
 
 const Onboarding = () => {
@@ -21,6 +22,9 @@ const Onboarding = () => {
   const [fullName, setFullName] = useState('');
   const [selectedRole, setSelectedRole] = useState<AppRole>('student');
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const email = user?.email || '';
+  const isTCETEmail = email.endsWith('@tcetmumbai.in');
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -64,9 +68,8 @@ const Onboarding = () => {
     }
 
     // Validate TCET email domain
-    const email = user.email || '';
-    if (!email.endsWith('@tcetmumbai.in')) {
-      toast.error('Only @tcetmumbai.in email addresses are allowed');
+    if (!isTCETEmail) {
+      toast.error('Only @tcetmumbai.in email addresses are allowed to create profiles');
       return;
     }
 
@@ -139,97 +142,149 @@ const Onboarding = () => {
 
   if (authLoading || roleLoading || profileLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      <div className="min-h-screen flex items-center justify-center">
+        <AnimatedBackground />
+        <div className="relative z-10 animate-spin rounded-full h-10 w-10 border-b-2 border-primary"></div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/10 via-background to-secondary/10 p-4">
-      <Card className="w-full max-w-lg shadow-xl">
-        <CardHeader className="text-center space-y-4">
-          <div className="mx-auto w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center">
-            <User className="w-8 h-8 text-primary" />
-          </div>
-          <CardTitle className="text-2xl font-bold">Complete Your Profile</CardTitle>
-          <CardDescription className="text-base">
-            Welcome to TCET Book Exchange! Please complete your profile to continue.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="space-y-2">
-              <Label htmlFor="email">Official TCET G-Suite Email</Label>
-              <Input
-                id="email"
-                type="email"
-                value={user?.email || ''}
-                disabled
-                className="bg-muted"
-              />
-            </div>
+    <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden">
+      <AnimatedBackground />
 
-            <div className="space-y-2">
-              <Label htmlFor="fullName">Full Name</Label>
-              <Input
-                id="fullName"
-                type="text"
-                placeholder="Enter your full name"
-                value={fullName}
-                onChange={(e) => setFullName(e.target.value)}
-                required
-              />
-            </div>
+      {/* Floating decorative elements */}
+      <div className="absolute top-20 right-20 w-24 h-24 bg-secondary/20 rounded-full blur-3xl animate-pulse" />
+      <div className="absolute bottom-20 left-20 w-32 h-32 bg-primary/20 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
 
-            <div className="space-y-3">
-              <Label>Select Your Role</Label>
-              <RadioGroup
-                value={selectedRole}
-                onValueChange={(value) => setSelectedRole(value as AppRole)}
-                className="grid gap-3"
+      <div className="relative z-10 w-full max-w-lg animate-fade-in">
+        <Card className="glass-card shadow-2xl border-0 overflow-hidden">
+          {/* Gradient top border */}
+          <div className="h-1 w-full animated-gradient-bg" />
+
+          <CardHeader className="text-center space-y-4 pt-8">
+            <div className="mx-auto w-16 h-16 bg-gradient-to-br from-primary to-secondary rounded-2xl flex items-center justify-center shadow-lg transform hover:scale-105 transition-transform">
+              <User className="w-8 h-8 text-primary-foreground" />
+            </div>
+            <CardTitle className="text-2xl font-bold text-gradient">Complete Your Profile</CardTitle>
+            <CardDescription className="text-base">
+              Welcome to TCET Book Exchange! Please complete your profile to continue.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="pb-8">
+            {/* TCET Email Validation Warning */}
+            {!isTCETEmail && (
+              <div className="mb-6 p-4 bg-destructive/10 border border-destructive/20 rounded-lg flex items-start gap-3">
+                <AlertCircle className="w-5 h-5 text-destructive flex-shrink-0 mt-0.5" />
+                <div>
+                  <p className="font-medium text-destructive">Invalid Email Domain</p>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Only <strong>@tcetmumbai.in</strong> email addresses are allowed to register. 
+                    Please sign out and use your official TCET G-Suite email.
+                  </p>
+                </div>
+              </div>
+            )}
+
+            <form onSubmit={handleSubmit} className="space-y-6">
+              <div className="space-y-2">
+                <Label htmlFor="email" className="text-sm font-medium">Official TCET G-Suite Email</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  value={email}
+                  disabled
+                  className={`bg-muted/50 ${!isTCETEmail ? 'border-destructive' : ''}`}
+                />
+                {isTCETEmail && (
+                  <p className="text-xs text-success flex items-center gap-1">
+                    <Shield className="w-3 h-3" />
+                    Verified TCET email
+                  </p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="fullName" className="text-sm font-medium">Full Name</Label>
+                <Input
+                  id="fullName"
+                  type="text"
+                  placeholder="Enter your full name"
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                  required
+                  disabled={!isTCETEmail}
+                  className="h-12"
+                />
+              </div>
+
+              <div className="space-y-3">
+                <Label className="text-sm font-medium">Select Your Role</Label>
+                <RadioGroup
+                  value={selectedRole}
+                  onValueChange={(value) => setSelectedRole(value as AppRole)}
+                  className="grid gap-3"
+                  disabled={!isTCETEmail}
+                >
+                  <div className={`flex items-center space-x-3 p-4 border rounded-xl hover:bg-primary/5 cursor-pointer transition-all ${selectedRole === 'student' ? 'border-primary bg-primary/5 shadow-sm' : 'border-border'}`}>
+                    <RadioGroupItem value="student" id="student" />
+                    <Label htmlFor="student" className="flex items-center gap-3 cursor-pointer flex-1">
+                      <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                        <GraduationCap className="w-5 h-5 text-primary" />
+                      </div>
+                      <div>
+                        <p className="font-medium">Student</p>
+                        <p className="text-sm text-muted-foreground">Access book exchange & revision materials</p>
+                      </div>
+                    </Label>
+                  </div>
+
+                  <div className={`flex items-center space-x-3 p-4 border rounded-xl hover:bg-secondary/5 cursor-pointer transition-all ${selectedRole === 'teacher' ? 'border-secondary bg-secondary/5 shadow-sm' : 'border-border'}`}>
+                    <RadioGroupItem value="teacher" id="teacher" />
+                    <Label htmlFor="teacher" className="flex items-center gap-3 cursor-pointer flex-1">
+                      <div className="w-10 h-10 rounded-lg bg-secondary/10 flex items-center justify-center">
+                        <BookOpen className="w-5 h-5 text-secondary" />
+                      </div>
+                      <div>
+                        <p className="font-medium">Teacher</p>
+                        <p className="text-sm text-muted-foreground">Upload & manage revision content</p>
+                      </div>
+                    </Label>
+                  </div>
+
+                  <div className={`flex items-center space-x-3 p-4 border rounded-xl hover:bg-accent/5 cursor-pointer transition-all ${selectedRole === 'admin' ? 'border-accent bg-accent/5 shadow-sm' : 'border-border'}`}>
+                    <RadioGroupItem value="admin" id="admin" />
+                    <Label htmlFor="admin" className="flex items-center gap-3 cursor-pointer flex-1">
+                      <div className="w-10 h-10 rounded-lg bg-accent/10 flex items-center justify-center">
+                        <Shield className="w-5 h-5 text-accent" />
+                      </div>
+                      <div>
+                        <p className="font-medium">Admin</p>
+                        <p className="text-sm text-muted-foreground">Requires pre-approved credentials</p>
+                      </div>
+                    </Label>
+                  </div>
+                </RadioGroup>
+              </div>
+
+              <Button 
+                type="submit" 
+                className="w-full h-12 bg-gradient-to-r from-primary to-accent hover:opacity-90 transition-opacity shadow-lg" 
+                disabled={isSubmitting || !isTCETEmail}
               >
-                <div className="flex items-center space-x-3 p-4 border rounded-lg hover:bg-muted/50 cursor-pointer">
-                  <RadioGroupItem value="student" id="student" />
-                  <Label htmlFor="student" className="flex items-center gap-3 cursor-pointer flex-1">
-                    <GraduationCap className="w-5 h-5 text-primary" />
-                    <div>
-                      <p className="font-medium">Student</p>
-                      <p className="text-sm text-muted-foreground">Access student dashboard and book exchange</p>
-                    </div>
-                  </Label>
-                </div>
-
-                <div className="flex items-center space-x-3 p-4 border rounded-lg hover:bg-muted/50 cursor-pointer">
-                  <RadioGroupItem value="teacher" id="teacher" />
-                  <Label htmlFor="teacher" className="flex items-center gap-3 cursor-pointer flex-1">
-                    <BookOpen className="w-5 h-5 text-primary" />
-                    <div>
-                      <p className="font-medium">Teacher</p>
-                      <p className="text-sm text-muted-foreground">Access teacher dashboard and manage classes</p>
-                    </div>
-                  </Label>
-                </div>
-
-                <div className="flex items-center space-x-3 p-4 border rounded-lg hover:bg-muted/50 cursor-pointer">
-                  <RadioGroupItem value="admin" id="admin" />
-                  <Label htmlFor="admin" className="flex items-center gap-3 cursor-pointer flex-1">
-                    <Shield className="w-5 h-5 text-primary" />
-                    <div>
-                      <p className="font-medium">Admin</p>
-                      <p className="text-sm text-muted-foreground">Requires pre-approved admin credentials</p>
-                    </div>
-                  </Label>
-                </div>
-              </RadioGroup>
-            </div>
-
-            <Button type="submit" className="w-full h-12" disabled={isSubmitting}>
-              {isSubmitting ? 'Creating Profile...' : 'Continue'}
-            </Button>
-          </form>
-        </CardContent>
-      </Card>
+                {isSubmitting ? (
+                  <span className="flex items-center gap-2">
+                    <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                    Creating Profile...
+                  </span>
+                ) : (
+                  'Continue'
+                )}
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 };
