@@ -12,17 +12,24 @@ import { toast } from 'sonner';
 import { GraduationCap, BookOpen, Info, ArrowLeft } from 'lucide-react';
 import AnimatedBackground from '@/components/ui/AnimatedBackground';
 
-const BRANCHES = [
-  { value: 'CS', label: 'Computer Science (CS)' },
-  { value: 'IT', label: 'Information Technology (IT)' },
-  { value: 'EXTC', label: 'Electronics & Telecommunication (EXTC)' },
-  { value: 'MECH', label: 'Mechanical Engineering (MECH)' },
-  { value: 'CIVIL', label: 'Civil Engineering (CIVIL)' },
-  { value: 'AIDS', label: 'AI & Data Science (AIDS)' },
-  { value: 'AIML', label: 'AI & Machine Learning (AIML)' },
+const SLOT_1_CLASSES = [
+  'COMP-A', 'COMP-B', 'COMP-C', 'COMP-D',
+  'CSC-A', 'CSC-B', 'CSC-C',
+  'AIDS-A', 'AIDS-B', 'AIDS-C', 'AIDS-D',
+  'CSC-IOT-A', 'CSC-IOT-B',
+  'MME-A'
 ];
 
-const DIVISIONS = ['A', 'B', 'C', 'D'];
+const SLOT_2_CLASSES = [
+  'AIML-A', 'AIML-B', 'AIML-C', 'AIML-D',
+  'IT-A', 'IT-B', 'IT-C', 'IT-D',
+  'MECH-A'
+];
+
+const ALL_CLASSES = [
+  ...SLOT_1_CLASSES.map(c => ({ value: c, slot: 1 })),
+  ...SLOT_2_CLASSES.map(c => ({ value: c, slot: 2 }))
+];
 
 const slot1Books = [
   'Engineering Mechanics',
@@ -43,14 +50,13 @@ const AcademicProfile = () => {
   const { user, loading: authLoading, signOut } = useAuth();
   const { data: academicInfo, isLoading: academicLoading } = useStudentAcademicInfo();
 
-  const [branch, setBranch] = useState('');
-  const [division, setDivision] = useState('');
+  const [selectedClass, setSelectedClass] = useState('');
   const [rollNumber, setRollNumber] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Preview of slot and books
-  const rollNum = parseInt(rollNumber) || 0;
-  const previewSlot = rollNum > 0 ? (rollNum % 2 === 1 ? 1 : 2) : null;
+  // Preview of slot and books based on selected class
+  const selectedClassInfo = ALL_CLASSES.find(c => c.value === selectedClass);
+  const previewSlot = selectedClassInfo?.slot || null;
   const previewBooksOwned = previewSlot === 1 ? slot1Books : previewSlot === 2 ? slot2Books : [];
   const previewBooksRequired = previewSlot === 1 ? slot2Books : previewSlot === 2 ? slot1Books : [];
 
@@ -73,7 +79,7 @@ const AcademicProfile = () => {
       return;
     }
 
-    if (!branch || !division || !rollNumber) {
+    if (!selectedClass || !rollNumber) {
       toast.error('Please fill in all fields');
       return;
     }
@@ -84,18 +90,34 @@ const AcademicProfile = () => {
       return;
     }
 
+    const classInfo = ALL_CLASSES.find(c => c.value === selectedClass);
+    if (!classInfo) {
+      toast.error('Invalid class selected');
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
-      const slot = rollNum % 2 === 1 ? 1 : 2;
+      const slot = classInfo.slot;
       const booksOwned = slot === 1 ? slot1Books : slot2Books;
       const booksRequired = slot === 1 ? slot2Books : slot1Books;
+
+      // Extract branch from class (e.g., "COMP-A" -> "CS", "AIDS-A" -> "AIDS")
+      const classPrefix = selectedClass.split('-')[0];
+      const branchMap: Record<string, 'CS' | 'IT' | 'EXTC' | 'MECH' | 'CIVIL' | 'AIDS' | 'AIML'> = {
+        'COMP': 'CS', 'CSC': 'CS', 'CSC-IOT': 'CS',
+        'AIDS': 'AIDS', 'AIML': 'AIML', 'IT': 'IT',
+        'MECH': 'MECH', 'MME': 'MECH'
+      };
+      const branch = branchMap[classPrefix] || 'CS';
+      const division = selectedClass.split('-').pop() || 'A';
 
       const { error } = await supabase
         .from('student_academic_info')
         .insert({
           user_id: user.id,
-          branch: branch as 'CS' | 'IT' | 'EXTC' | 'MECH' | 'CIVIL' | 'AIDS' | 'AIML',
+          branch,
           division,
           roll_number: rollNum,
           slot,
@@ -164,33 +186,24 @@ const AcademicProfile = () => {
           </CardHeader>
           <CardContent className="pb-8">
             <form onSubmit={handleSubmit} className="space-y-6">
-              <div className="grid md:grid-cols-3 gap-4">
+              <div className="grid sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="branch" className="text-sm font-medium">Branch</Label>
-                  <Select value={branch} onValueChange={setBranch}>
+                  <Label htmlFor="class" className="text-sm font-medium">Class</Label>
+                  <Select value={selectedClass} onValueChange={setSelectedClass}>
                     <SelectTrigger className="h-12">
-                      <SelectValue placeholder="Select branch" />
+                      <SelectValue placeholder="Select your class" />
                     </SelectTrigger>
-                    <SelectContent>
-                      {BRANCHES.map((b) => (
-                        <SelectItem key={b.value} value={b.value}>
-                          {b.label}
+                    <SelectContent className="max-h-60">
+                      <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">Slot 1 Classes</div>
+                      {SLOT_1_CLASSES.map((c) => (
+                        <SelectItem key={c} value={c}>
+                          {c}
                         </SelectItem>
                       ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="division" className="text-sm font-medium">Division</Label>
-                  <Select value={division} onValueChange={setDivision}>
-                    <SelectTrigger className="h-12">
-                      <SelectValue placeholder="Select division" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {DIVISIONS.map((d) => (
-                        <SelectItem key={d} value={d}>
-                          Division {d}
+                      <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground border-t mt-1 pt-2">Slot 2 Classes</div>
+                      {SLOT_2_CLASSES.map((c) => (
+                        <SelectItem key={c} value={c}>
+                          {c}
                         </SelectItem>
                       ))}
                     </SelectContent>
