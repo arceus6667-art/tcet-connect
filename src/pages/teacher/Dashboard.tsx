@@ -1,16 +1,19 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useProfile, useUserRole } from '@/hooks/useUserRole';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { BookOpen, LogOut, Users, Calendar, Bell } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { BookOpen, LogOut, BarChart3, FileText } from 'lucide-react';
+import TeacherStatsCard from '@/components/teacher/TeacherStatsCard';
+import ContentManager from '@/components/teacher/ContentManager';
 
 const TeacherDashboard = () => {
   const navigate = useNavigate();
   const { user, signOut, loading: authLoading } = useAuth();
   const { data: profile, isLoading: profileLoading } = useProfile();
   const { data: userRole, isLoading: roleLoading } = useUserRole();
+  const [activeTab, setActiveTab] = useState('overview');
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -65,86 +68,34 @@ const TeacherDashboard = () => {
       </header>
 
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 py-8 space-y-6">
-        <div className="space-y-2">
-          <h2 className="text-3xl font-bold">Welcome, {profile?.full_name?.split(' ')[0]}!</h2>
-          <p className="text-muted-foreground">Manage your classes and view student information.</p>
-        </div>
+      <main className="max-w-7xl mx-auto px-4 py-8">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+              <h2 className="text-3xl font-bold">Welcome, {profile?.full_name?.split(' ')[0]}!</h2>
+              <p className="text-muted-foreground">View statistics and manage revision content</p>
+            </div>
+          </div>
 
-        {/* Quick Stats */}
-        <div className="grid md:grid-cols-4 gap-4">
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">My Classes</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-3xl font-bold">0</p>
-            </CardContent>
-          </Card>
+          <TabsList className="grid w-full grid-cols-2 lg:w-auto lg:inline-grid">
+            <TabsTrigger value="overview" className="gap-2">
+              <BarChart3 className="w-4 h-4" />
+              <span>Overview & Stats</span>
+            </TabsTrigger>
+            <TabsTrigger value="content" className="gap-2">
+              <FileText className="w-4 h-4" />
+              <span>Revision Content</span>
+            </TabsTrigger>
+          </TabsList>
 
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Total Students</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-3xl font-bold">0</p>
-            </CardContent>
-          </Card>
+          <TabsContent value="overview">
+            <TeacherStatsCard />
+          </TabsContent>
 
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Pending Requests</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-3xl font-bold">0</p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Announcements</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-3xl font-bold">0</p>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Feature Cards */}
-        <div className="grid md:grid-cols-3 gap-6">
-          <Card className="hover:shadow-lg transition-shadow cursor-pointer">
-            <CardHeader>
-              <Users className="w-8 h-8 text-primary mb-2" />
-              <CardTitle>View Students</CardTitle>
-              <CardDescription>View students in your assigned classes</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Button variant="outline" className="w-full">Coming Soon</Button>
-            </CardContent>
-          </Card>
-
-          <Card className="hover:shadow-lg transition-shadow cursor-pointer">
-            <CardHeader>
-              <Calendar className="w-8 h-8 text-primary mb-2" />
-              <CardTitle>Schedule</CardTitle>
-              <CardDescription>View your class schedule and timetable</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Button variant="outline" className="w-full">Coming Soon</Button>
-            </CardContent>
-          </Card>
-
-          <Card className="hover:shadow-lg transition-shadow cursor-pointer">
-            <CardHeader>
-              <Bell className="w-8 h-8 text-primary mb-2" />
-              <CardTitle>Announcements</CardTitle>
-              <CardDescription>Post announcements for your students</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Button variant="outline" className="w-full">Coming Soon</Button>
-            </CardContent>
-          </Card>
-        </div>
+          <TabsContent value="content">
+            <ContentManager />
+          </TabsContent>
+        </Tabs>
       </main>
     </div>
   );

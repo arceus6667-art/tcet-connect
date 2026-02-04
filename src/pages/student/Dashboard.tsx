@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useProfile, useStudentAcademicInfo, useUserRole } from '@/hooks/useUserRole';
@@ -6,6 +6,7 @@ import { useExchangeMatch, useConfirmExchange } from '@/hooks/useExchangeMatch';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
   GraduationCap, 
   BookOpen, 
@@ -18,9 +19,11 @@ import {
   MapPin,
   Calendar,
   UserCheck,
-  Mail
+  Mail,
+  Sparkles
 } from 'lucide-react';
 import { format } from 'date-fns';
+import RevisionContentViewer from '@/components/student/RevisionContentViewer';
 
 const StudentDashboard = () => {
   const navigate = useNavigate();
@@ -30,6 +33,7 @@ const StudentDashboard = () => {
   const { data: userRole, isLoading: roleLoading } = useUserRole();
   const { data: exchangeMatch, isLoading: matchLoading } = useExchangeMatch();
   const confirmExchange = useConfirmExchange();
+  const [activeTab, setActiveTab] = useState('exchange');
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -122,13 +126,27 @@ const StudentDashboard = () => {
       </header>
 
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 py-8 space-y-6">
-        {/* Welcome Section */}
-        <div className="space-y-2">
-          <h2 className="text-3xl font-bold">Welcome, {profile?.full_name?.split(' ')[0]}!</h2>
-          <p className="text-muted-foreground">Here's your book exchange status and information.</p>
-        </div>
+      <main className="max-w-7xl mx-auto px-4 py-8">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div className="space-y-1">
+              <h2 className="text-3xl font-bold">Welcome, {profile?.full_name?.split(' ')[0]}!</h2>
+              <p className="text-muted-foreground">Manage your book exchange and access revision materials</p>
+            </div>
+          </div>
 
+          <TabsList className="grid w-full grid-cols-2 lg:w-auto lg:inline-grid">
+            <TabsTrigger value="exchange" className="gap-2">
+              <ArrowLeftRight className="w-4 h-4" />
+              <span>Book Exchange</span>
+            </TabsTrigger>
+            <TabsTrigger value="revision" className="gap-2">
+              <Sparkles className="w-4 h-4" />
+              <span>One-Shot Revision</span>
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="exchange" className="space-y-6">
         {/* Stats Grid */}
         <div className="grid md:grid-cols-3 gap-4">
           <Card>
@@ -443,6 +461,12 @@ const StudentDashboard = () => {
             </div>
           </CardContent>
         </Card>
+          </TabsContent>
+
+          <TabsContent value="revision">
+            <RevisionContentViewer />
+          </TabsContent>
+        </Tabs>
       </main>
     </div>
   );

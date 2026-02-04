@@ -8,12 +8,13 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Shield, LogOut, Users, BarChart3, ArrowLeftRight, Play, RefreshCw } from 'lucide-react';
+import { Shield, LogOut, Users, BarChart3, ArrowLeftRight, Play, RefreshCw, BookOpen } from 'lucide-react';
 import { toast } from 'sonner';
 import { useQueryClient } from '@tanstack/react-query';
 import AdminUsersPage from '@/components/admin/AdminUsersPage';
 import AdminExchangesPage from '@/components/admin/AdminExchangesPage';
 import AdminAnalyticsPage from '@/components/admin/AdminAnalyticsPage';
+import AdminContentPage from '@/components/admin/AdminContentPage';
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
@@ -155,7 +156,7 @@ const AdminDashboard = () => {
             </div>
           </div>
 
-          <TabsList className="grid w-full grid-cols-4 lg:w-auto lg:inline-grid">
+          <TabsList className="grid w-full grid-cols-5 lg:w-auto lg:inline-grid">
             <TabsTrigger value="overview" className="gap-2">
               <BarChart3 className="w-4 h-4" />
               <span className="hidden sm:inline">Overview</span>
@@ -167,6 +168,10 @@ const AdminDashboard = () => {
             <TabsTrigger value="exchanges" className="gap-2">
               <ArrowLeftRight className="w-4 h-4" />
               <span className="hidden sm:inline">Exchanges</span>
+            </TabsTrigger>
+            <TabsTrigger value="content" className="gap-2">
+              <BookOpen className="w-4 h-4" />
+              <span className="hidden sm:inline">Content</span>
             </TabsTrigger>
             <TabsTrigger value="analytics" className="gap-2">
               <BarChart3 className="w-4 h-4" />
@@ -299,6 +304,11 @@ const AdminDashboard = () => {
           {/* Exchanges Tab */}
           <TabsContent value="exchanges">
             <AdminExchangesPage />
+          </TabsContent>
+
+          {/* Content Tab */}
+          <TabsContent value="content">
+            <AdminContentPage />
           </TabsContent>
 
           {/* Analytics Tab */}
