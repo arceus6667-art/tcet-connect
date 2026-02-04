@@ -14,6 +14,47 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_action_logs: {
+        Row: {
+          action_description: string
+          action_type: string
+          admin_id: string
+          created_at: string
+          id: string
+          metadata: Json | null
+          target_match_id: string | null
+          target_user_id: string | null
+        }
+        Insert: {
+          action_description: string
+          action_type: string
+          admin_id: string
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          target_match_id?: string | null
+          target_user_id?: string | null
+        }
+        Update: {
+          action_description?: string
+          action_type?: string
+          admin_id?: string
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          target_match_id?: string | null
+          target_user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "admin_action_logs_target_match_id_fkey"
+            columns: ["target_match_id"]
+            isOneToOne: false
+            referencedRelation: "exchange_matches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       approved_admin_emails: {
         Row: {
           created_at: string
@@ -182,6 +223,7 @@ export type Database = {
           email: string
           full_name: string
           id: string
+          is_active: boolean | null
           profile_completed: boolean | null
           updated_at: string
           user_id: string
@@ -192,6 +234,7 @@ export type Database = {
           email: string
           full_name: string
           id?: string
+          is_active?: boolean | null
           profile_completed?: boolean | null
           updated_at?: string
           user_id: string
@@ -202,6 +245,7 @@ export type Database = {
           email?: string
           full_name?: string
           id?: string
+          is_active?: boolean | null
           profile_completed?: boolean | null
           updated_at?: string
           user_id?: string
@@ -250,6 +294,36 @@ export type Database = {
           slot?: number
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      system_settings: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          key: string
+          updated_at: string
+          updated_by: string | null
+          value: Json
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          key: string
+          updated_at?: string
+          updated_by?: string | null
+          value: Json
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          key?: string
+          updated_at?: string
+          updated_by?: string | null
+          value?: Json
         }
         Relationships: []
       }
@@ -309,6 +383,16 @@ export type Database = {
       is_student_matched_this_semester: {
         Args: { _user_id: string }
         Returns: boolean
+      }
+      log_admin_action: {
+        Args: {
+          _action_description: string
+          _action_type: string
+          _metadata?: Json
+          _target_match_id?: string
+          _target_user_id?: string
+        }
+        Returns: string
       }
     }
     Enums: {
