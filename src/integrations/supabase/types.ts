@@ -252,6 +252,74 @@ export type Database = {
         }
         Relationships: []
       }
+      revision_content: {
+        Row: {
+          approved_at: string | null
+          approved_by: string | null
+          content_data: Json | null
+          content_type: Database["public"]["Enums"]["content_type"]
+          created_at: string
+          created_by: string
+          description: string | null
+          file_name: string | null
+          file_size: number | null
+          file_url: string | null
+          id: string
+          rejection_reason: string | null
+          status: Database["public"]["Enums"]["content_status"]
+          subject_id: string
+          title: string
+          updated_at: string
+          view_count: number | null
+        }
+        Insert: {
+          approved_at?: string | null
+          approved_by?: string | null
+          content_data?: Json | null
+          content_type: Database["public"]["Enums"]["content_type"]
+          created_at?: string
+          created_by: string
+          description?: string | null
+          file_name?: string | null
+          file_size?: number | null
+          file_url?: string | null
+          id?: string
+          rejection_reason?: string | null
+          status?: Database["public"]["Enums"]["content_status"]
+          subject_id: string
+          title: string
+          updated_at?: string
+          view_count?: number | null
+        }
+        Update: {
+          approved_at?: string | null
+          approved_by?: string | null
+          content_data?: Json | null
+          content_type?: Database["public"]["Enums"]["content_type"]
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          file_name?: string | null
+          file_size?: number | null
+          file_url?: string | null
+          id?: string
+          rejection_reason?: string | null
+          status?: Database["public"]["Enums"]["content_status"]
+          subject_id?: string
+          title?: string
+          updated_at?: string
+          view_count?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "revision_content_subject_id_fkey"
+            columns: ["subject_id"]
+            isOneToOne: false
+            referencedRelation: "subjects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       student_academic_info: {
         Row: {
           academic_info_completed: boolean | null
@@ -294,6 +362,36 @@ export type Database = {
           slot?: number
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      subjects: {
+        Row: {
+          code: string
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+          slot: number
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          slot: number
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          slot?: number
         }
         Relationships: []
       }
@@ -398,6 +496,8 @@ export type Database = {
     Enums: {
       app_role: "student" | "teacher" | "admin"
       branch: "CS" | "IT" | "EXTC" | "MECH" | "CIVIL" | "AIDS" | "AIML"
+      content_status: "draft" | "pending_approval" | "approved" | "rejected"
+      content_type: "pdf" | "notes" | "flashcard"
       exchange_status:
         | "pending"
         | "requested"
@@ -534,6 +634,8 @@ export const Constants = {
     Enums: {
       app_role: ["student", "teacher", "admin"],
       branch: ["CS", "IT", "EXTC", "MECH", "CIVIL", "AIDS", "AIML"],
+      content_status: ["draft", "pending_approval", "approved", "rejected"],
+      content_type: ["pdf", "notes", "flashcard"],
       exchange_status: [
         "pending",
         "requested",
