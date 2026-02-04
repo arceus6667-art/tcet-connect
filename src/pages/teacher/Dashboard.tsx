@@ -7,6 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { BookOpen, LogOut, BarChart3, FileText } from 'lucide-react';
 import TeacherStatsCard from '@/components/teacher/TeacherStatsCard';
 import ContentManager from '@/components/teacher/ContentManager';
+import AnimatedBackground from '@/components/ui/AnimatedBackground';
 
 const TeacherDashboard = () => {
   const navigate = useNavigate();
@@ -35,23 +36,26 @@ const TeacherDashboard = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      <div className="min-h-screen flex items-center justify-center">
+        <AnimatedBackground />
+        <div className="relative z-10 animate-spin rounded-full h-10 w-10 border-b-2 border-primary"></div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-secondary/5">
+    <div className="min-h-screen relative">
+      <AnimatedBackground />
+      
       {/* Header */}
-      <header className="bg-card border-b sticky top-0 z-10">
+      <header className="glass-card border-b sticky top-0 z-20">
         <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center">
-              <BookOpen className="w-5 h-5 text-primary" />
+            <div className="w-10 h-10 bg-gradient-to-br from-secondary to-primary rounded-xl flex items-center justify-center shadow-lg">
+              <BookOpen className="w-5 h-5 text-primary-foreground" />
             </div>
             <div>
-              <h1 className="font-bold text-lg">TCET Book Exchange</h1>
+              <h1 className="font-bold text-lg text-gradient">TCET Book Exchange</h1>
               <p className="text-sm text-muted-foreground">Teacher Portal</p>
             </div>
           </div>
@@ -60,7 +64,7 @@ const TeacherDashboard = () => {
               <p className="font-medium">{profile?.full_name}</p>
               <p className="text-sm text-muted-foreground">{user?.email}</p>
             </div>
-            <Button variant="outline" size="icon" onClick={handleSignOut}>
+            <Button variant="outline" size="icon" onClick={handleSignOut} className="rounded-xl">
               <LogOut className="w-4 h-4" />
             </Button>
           </div>
@@ -68,7 +72,7 @@ const TeacherDashboard = () => {
       </header>
 
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 py-8">
+      <main className="relative z-10 max-w-7xl mx-auto px-4 py-8">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
