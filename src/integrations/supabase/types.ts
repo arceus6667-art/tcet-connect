@@ -73,6 +73,41 @@ export type Database = {
         }
         Relationships: []
       }
+      exchange_chat_messages: {
+        Row: {
+          created_at: string
+          id: string
+          match_id: string
+          message: string
+          read_at: string | null
+          sender_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          match_id: string
+          message: string
+          read_at?: string | null
+          sender_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          match_id?: string
+          message?: string
+          read_at?: string | null
+          sender_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "exchange_chat_messages_match_id_fkey"
+            columns: ["match_id"]
+            isOneToOne: false
+            referencedRelation: "exchange_matches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       exchange_locations: {
         Row: {
           created_at: string
