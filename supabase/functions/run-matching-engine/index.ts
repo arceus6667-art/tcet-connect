@@ -1,4 +1,4 @@
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { createClient, SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -28,6 +28,140 @@ interface TimeSlot {
 interface SemesterInfo {
   semester: string
   academic_year: string
+}
+
+// Helper function to check if a date is a weekend
+function isWeekend(date: Date): boolean {
+  const day = date.getDay()
+  return day === 0 || day === 6 // Sunday = 0, Saturday = 6
+}
+
+// Helper function to get next valid weekday
+function getNextWeekday(date: Date): Date {
+  const nextDate = new Date(date)
+  while (isWeekend(nextDate)) {
+    nextDate.setDate(nextDate.getDate() + 1)
+  }
+  return nextDate
+}
+
+// Helper function to get or create a valid time slot
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function getOrCreateTimeSlot(
+  supabase: SupabaseClient<any>,
+  targetDate: Date
+): Promise<TimeSlot | null> {
+  const dateStr = targetDate.toISOString().split('T')[0]
+  
+  // First, try to find an existing time slot for this date with capacity
+  const { data: existingSlots, error: fetchError } = await supabase
+    .from('exchange_time_slots')
+    .select('id, date, period, start_time, end_time, location_id, current_exchanges, max_exchanges')
+    .eq('date', dateStr)
+    .eq('is_active', true)
+    .order('period', { ascending: true })
+  
+  if (fetchError) {
+    console.error('Error fetching time slots:', fetchError)
+    return null
+  }
+
+  // Find a slot with capacity
+  if (existingSlots && existingSlots.length > 0) {
+    const availableSlot = existingSlots.find(
+      (slot: TimeSlot) => slot.current_exchanges < slot.max_exchanges
+    )
+    if (availableSlot) {
+      return availableSlot as TimeSlot
+    }
+  }
+
+  // Get default location (first active location)
+  const { data: locations } = await supabase
+    .from('exchange_locations')
+    .select('id')
+    .eq('is_active', true)
+    .limit(1)
+  
+  const defaultLocationId = (locations && locations.length > 0) ? locations[0].id : null
+
+  // Create time slots for the day if none exist
+  // Morning: 9:30 AM - 12:30 PM, Afternoon: 12:30 PM - 3:30 PM, Evening: 3:30 PM - 6:30 PM
+  const periods = [
+    { period: 'morning', start_time: '09:30:00', end_time: '12:30:00' },
+    { period: 'afternoon', start_time: '12:30:00', end_time: '15:30:00' },
+    { period: 'evening', start_time: '15:30:00', end_time: '18:30:00' }
+  ]
+
+  for (const p of periods) {
+    const { data: newSlot, error: insertError } = await supabase
+      .from('exchange_time_slots')
+      .insert({
+        date: dateStr,
+        period: p.period,
+        start_time: p.start_time,
+        end_time: p.end_time,
+        location_id: defaultLocationId,
+        current_exchanges: 0,
+        max_exchanges: 10,
+        is_active: true
+      })
+      .select()
+      .single()
+    
+    if (!insertError && newSlot) {
+      return newSlot as TimeSlot
+    }
+  }
+
+  // Retry fetching after creation
+  const { data: newSlots } = await supabase
+    .from('exchange_time_slots')
+    .select('id, date, period, start_time, end_time, location_id, current_exchanges, max_exchanges')
+    .eq('date', dateStr)
+    .eq('is_active', true)
+    .order('period', { ascending: true })
+  
+  if (newSlots && newSlots.length > 0) {
+    const availableSlot = newSlots.find(
+      (slot: TimeSlot) => slot.current_exchanges < slot.max_exchanges
+    )
+    if (availableSlot) {
+      return availableSlot as TimeSlot
+    }
+  }
+
+  return null
+}
+
+// Get the next valid exchange date (today if before 6:30 PM on weekday, otherwise next weekday)
+function getNextValidExchangeDate(): Date {
+  const now = new Date()
+  const currentHour = now.getHours()
+  const currentMinute = now.getMinutes()
+  
+  // If it's after 6:30 PM or weekend, move to next valid day
+  const isPastExchangeHours = currentHour > 18 || (currentHour === 18 && currentMinute >= 30)
+  
+  let targetDate = new Date(now)
+  
+  if (isPastExchangeHours || isWeekend(now)) {
+    // Move to next day
+    targetDate.setDate(targetDate.getDate() + 1)
+    targetDate = getNextWeekday(targetDate)
+  } else if (currentHour < 9 || (currentHour === 9 && currentMinute < 30)) {
+    // If before 9:30 AM, use today if it's a weekday
+    if (isWeekend(now)) {
+      targetDate = getNextWeekday(targetDate)
+    }
+  } else {
+    // During exchange hours, use today if weekday
+    if (isWeekend(now)) {
+      targetDate = getNextWeekday(targetDate)
+    }
+  }
+  
+  return targetDate
 }
 
 Deno.serve(async (req) => {
@@ -96,35 +230,11 @@ Deno.serve(async (req) => {
 
     console.log(`Eligible: ${eligibleSlot1.length} Slot 1, ${eligibleSlot2.length} Slot 2`)
 
-    // Get available time slots (future dates with capacity)
-    const { data: timeSlots, error: timeSlotError } = await supabase
-      .from('exchange_time_slots')
-      .select('id, date, period, start_time, end_time, location_id, current_exchanges, max_exchanges')
-      .gte('date', new Date().toISOString().split('T')[0])
-      .eq('is_active', true)
-      .order('date', { ascending: true })
-      .order('period', { ascending: true })
+    // Get the next valid exchange date (weekday only, within allowed hours)
+    const nextExchangeDate = getNextValidExchangeDate()
+    console.log(`Next valid exchange date: ${nextExchangeDate.toISOString().split('T')[0]}`)
 
-    if (timeSlotError) throw timeSlotError
-
-    const availableSlots = (timeSlots || []).filter(
-      (slot: TimeSlot) => slot.current_exchanges < slot.max_exchanges
-    )
-
-    console.log(`Available time slots: ${availableSlots.length}`)
-
-    if (availableSlots.length === 0) {
-      return new Response(
-        JSON.stringify({ 
-          success: true, 
-          message: 'No available time slots for matching',
-          matches_created: 0 
-        }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
-    }
-
-    // Match students - simple first-come-first-serve matching
+    // Match students
     const matches: Array<{
       student_1_id: string
       student_2_id: string
@@ -136,11 +246,12 @@ Deno.serve(async (req) => {
 
     const matchedSlot1Ids = new Set<string>()
     const matchedSlot2Ids = new Set<string>()
-    let slotIndex = 0
+    
+    // Track current date for slot allocation
+    let currentDate = new Date(nextExchangeDate)
 
     for (const slot1Student of eligibleSlot1) {
       if (matchedSlot1Ids.has(slot1Student.user_id)) continue
-      if (slotIndex >= availableSlots.length) break
 
       // Find an unmatched Slot 2 student (preferably from same branch/division for convenience)
       let bestMatch: StudentInfo | null = null
@@ -178,13 +289,26 @@ Deno.serve(async (req) => {
       }
 
       if (bestMatch) {
-        const currentSlot = availableSlots[slotIndex]
+        // Get or create a time slot for the current date
+        let timeSlot = await getOrCreateTimeSlot(supabase, currentDate)
+        
+        // If no slot available for current date, try next weekday
+        if (!timeSlot) {
+          currentDate.setDate(currentDate.getDate() + 1)
+          currentDate = getNextWeekday(currentDate)
+          timeSlot = await getOrCreateTimeSlot(supabase, currentDate)
+        }
+
+        if (!timeSlot) {
+          console.log('No available time slots, stopping matching')
+          break
+        }
         
         matches.push({
           student_1_id: slot1Student.user_id,
           student_2_id: bestMatch.user_id,
-          time_slot_id: currentSlot.id,
-          location_id: currentSlot.location_id,
+          time_slot_id: timeSlot.id,
+          location_id: timeSlot.location_id,
           semester: semesterInfo.semester,
           academic_year: semesterInfo.academic_year
         })
@@ -192,11 +316,10 @@ Deno.serve(async (req) => {
         matchedSlot1Ids.add(slot1Student.user_id)
         matchedSlot2Ids.add(bestMatch.user_id)
 
-        // Move to next slot if current one is getting full
-        availableSlots[slotIndex].current_exchanges++
-        if (availableSlots[slotIndex].current_exchanges >= availableSlots[slotIndex].max_exchanges) {
-          slotIndex++
-        }
+        // Update slot capacity
+        timeSlot.current_exchanges++
+        
+        // If slot is full, it will be skipped in next getOrCreateTimeSlot call
       }
     }
 
@@ -220,13 +343,26 @@ Deno.serve(async (req) => {
 
       if (updateError) throw updateError
 
-      // Update time slot current_exchanges count
-      for (const slot of availableSlots) {
-        if (slot.current_exchanges > 0) {
+      // Update time slot current_exchanges counts
+      const slotUpdates = new Map<string, number>()
+      for (const match of matches) {
+        const current = slotUpdates.get(match.time_slot_id) || 0
+        slotUpdates.set(match.time_slot_id, current + 1)
+      }
+
+      for (const [slotId, count] of slotUpdates) {
+        // Get current count first
+        const { data: slotData } = await supabase
+          .from('exchange_time_slots')
+          .select('current_exchanges')
+          .eq('id', slotId)
+          .single()
+        
+        if (slotData) {
           await supabase
             .from('exchange_time_slots')
-            .update({ current_exchanges: slot.current_exchanges })
-            .eq('id', slot.id)
+            .update({ current_exchanges: ((slotData as { current_exchanges: number }).current_exchanges || 0) + count })
+            .eq('id', slotId)
         }
       }
     }
@@ -237,7 +373,8 @@ Deno.serve(async (req) => {
         message: `Successfully matched ${matches.length} pairs`,
         matches_created: matches.length,
         semester: semesterInfo.semester,
-        academic_year: semesterInfo.academic_year
+        academic_year: semesterInfo.academic_year,
+        exchange_date: nextExchangeDate.toISOString().split('T')[0]
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
