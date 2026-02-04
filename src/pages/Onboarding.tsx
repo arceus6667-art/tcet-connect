@@ -20,10 +20,10 @@ const Onboarding = () => {
   const { data: profile, isLoading: profileLoading } = useProfile();
   
   const [fullName, setFullName] = useState('');
+  const [email, setEmail] = useState(user?.email || '');
   const [selectedRole, setSelectedRole] = useState<AppRole>('student');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const email = user?.email || '';
   const isTCETEmail = email.endsWith('@tcetmumbai.in');
 
   useEffect(() => {
@@ -32,11 +32,16 @@ const Onboarding = () => {
       return;
     }
 
+    // Set email from user if not already set
+    if (user?.email && !email) {
+      setEmail(user.email);
+    }
+
     if (!roleLoading && !profileLoading && profile && userRole) {
       // User has completed onboarding, redirect based on role
       redirectBasedOnRole(userRole.role);
     }
-  }, [authLoading, user, roleLoading, profileLoading, profile, userRole, navigate]);
+  }, [authLoading, user, roleLoading, profileLoading, profile, userRole, navigate, email]);
 
   const redirectBasedOnRole = (role: AppRole) => {
     switch (role) {
@@ -67,6 +72,18 @@ const Onboarding = () => {
       return;
     }
 
+    if (!email.trim()) {
+      toast.error('Please enter your email address');
+      return;
+    }
+
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email.trim())) {
+      toast.error('Please enter a valid email address');
+      return;
+    }
+
     // Validate TCET email domain
     if (!isTCETEmail) {
       toast.error('Only @tcetmumbai.in email addresses are allowed to create profiles');
@@ -94,7 +111,7 @@ const Onboarding = () => {
         .insert({
           user_id: user.id,
           full_name: fullName.trim(),
-          email: email,
+          email: email.trim(),
           profile_completed: true,
         });
 
@@ -180,7 +197,7 @@ const Onboarding = () => {
                   <p className="font-medium text-destructive">Invalid Email Domain</p>
                   <p className="text-sm text-muted-foreground mt-1">
                     Only <strong>@tcetmumbai.in</strong> email addresses are allowed to register. 
-                    Please sign out and use your official TCET G-Suite email.
+                    Please enter your official TCET G-Suite email below.
                   </p>
                 </div>
               </div>
@@ -192,14 +209,16 @@ const Onboarding = () => {
                 <Input
                   id="email"
                   type="email"
+                  placeholder="yourname@tcetmumbai.in"
                   value={email}
-                  disabled
-                  className={`bg-muted/50 ${!isTCETEmail ? 'border-destructive' : ''}`}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className={`h-12 ${!isTCETEmail && email ? 'border-destructive focus-visible:ring-destructive' : ''}`}
+                  required
                 />
                 {isTCETEmail && (
                   <p className="text-xs text-success flex items-center gap-1">
                     <Shield className="w-3 h-3" />
-                    Verified TCET email
+                    Valid TCET email
                   </p>
                 )}
               </div>
