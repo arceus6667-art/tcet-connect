@@ -9,9 +9,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { toast } from 'sonner';
-import { GraduationCap, User, BookOpen, Shield, AlertCircle } from 'lucide-react';
+import { GraduationCap, BookOpen, Shield, AlertCircle } from 'lucide-react';
 import AnimatedBackground from '@/components/ui/AnimatedBackground';
 import type { AppRole } from '@/hooks/useUserRole';
+import tcetLogo from '@/assets/tcet-logo.png';
 
 const Onboarding = () => {
   const navigate = useNavigate();
@@ -205,8 +206,8 @@ const Onboarding = () => {
           <div className="h-1 w-full animated-gradient-bg" />
 
           <CardHeader className="text-center space-y-4 pt-8">
-            <div className="mx-auto w-16 h-16 bg-gradient-to-br from-primary to-secondary rounded-2xl flex items-center justify-center shadow-lg transform hover:scale-105 transition-transform">
-              <User className="w-8 h-8 text-primary-foreground" />
+            <div className="mx-auto w-20 h-20 rounded-full flex items-center justify-center overflow-hidden bg-white shadow-lg transform hover:scale-105 transition-transform">
+              <img src={tcetLogo} alt="TCET Logo" className="w-16 h-16 object-contain" />
             </div>
             <CardTitle className="text-2xl font-bold text-gradient">Complete Your Profile</CardTitle>
             <CardDescription className="text-base">
