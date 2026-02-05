@@ -25,6 +25,7 @@ import { format } from 'date-fns';
 import RevisionContentViewer from '@/components/student/RevisionContentViewer';
 import ExchangeChat from '@/components/student/ExchangeChat';
 import AnimatedBackground from '@/components/ui/AnimatedBackground';
+import NotificationBell from '@/components/student/NotificationBell';
 import tcetLogo from '@/assets/tcet-logo.png';
 
 const StudentDashboard = () => {
@@ -119,6 +120,7 @@ const StudentDashboard = () => {
             </div>
           </div>
           <div className="flex items-center gap-4">
+            <NotificationBell />
             <div className="text-right hidden sm:block">
               <p className="font-medium">{profile?.full_name}</p>
               <p className="text-sm text-muted-foreground">{user?.email}</p>

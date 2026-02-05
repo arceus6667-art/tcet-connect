@@ -8,6 +8,7 @@ import { LogOut, BarChart3, FileText } from 'lucide-react';
 import TeacherStatsCard from '@/components/teacher/TeacherStatsCard';
 import ContentManager from '@/components/teacher/ContentManager';
 import AnimatedBackground from '@/components/ui/AnimatedBackground';
+import NotificationBell from '@/components/student/NotificationBell';
 import tcetLogo from '@/assets/tcet-logo.png';
 
 const TeacherDashboard = () => {
@@ -61,6 +62,7 @@ const TeacherDashboard = () => {
             </div>
           </div>
           <div className="flex items-center gap-4">
+            <NotificationBell />
             <div className="text-right hidden sm:block">
               <p className="font-medium">{profile?.full_name}</p>
               <p className="text-sm text-muted-foreground">{user?.email}</p>
