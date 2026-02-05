@@ -6,6 +6,7 @@ import {
   useSystemSettings,
   useUpdateSystemSetting
 } from '@/hooks/useAdminData';
+import ManualMatchDialog from './ManualMatchDialog';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -39,7 +40,8 @@ import {
   MapPin,
   Play,
   Pause,
-  Settings
+  Settings,
+  Plus
 } from 'lucide-react';
 import { format } from 'date-fns';
 
@@ -47,6 +49,7 @@ const AdminExchangesPage = () => {
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [selectedMatch, setSelectedMatch] = useState<string | null>(null);
   const [actionType, setActionType] = useState<'cancel' | 'complete' | null>(null);
+  const [showManualMatch, setShowManualMatch] = useState(false);
 
   const { data: matches, isLoading: matchesLoading } = useAllExchangeMatches(statusFilter);
   const { data: settings } = useSystemSettings();
@@ -110,6 +113,13 @@ const AdminExchangesPage = () => {
               </CardDescription>
             </div>
             <div className="flex items-center gap-4">
+              <Button 
+                onClick={() => setShowManualMatch(true)}
+                className="gap-2"
+              >
+                <Plus className="w-4 h-4" />
+                Manual Match
+              </Button>
               <div className="flex items-center gap-2">
                 <Label htmlFor="matching-toggle">
                   {matchingEnabled ? (
@@ -319,6 +329,12 @@ const AdminExchangesPage = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Manual Match Dialog */}
+      <ManualMatchDialog 
+        open={showManualMatch} 
+        onOpenChange={setShowManualMatch} 
+      />
     </div>
   );
 };

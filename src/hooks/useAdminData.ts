@@ -121,6 +121,121 @@ export const useAllUsers = (roleFilter?: string) => {
   });
 };
 
+// Fetch eligible students for manual matching
+export interface EligibleStudent {
+  user_id: string;
+  full_name: string;
+  email: string;
+  branch: string;
+  division: string;
+  roll_number: number;
+  slot: number;
+  books_owned: string[];
+  books_required: string[];
+}
+
+export const useEligibleStudents = (slot?: number) => {
+  return useQuery({
+    queryKey: ['admin-eligible-students', slot],
+    queryFn: async (): Promise<EligibleStudent[]> => {
+      let query = supabase
+        .from('student_academic_info')
+        .select('user_id, branch, division, roll_number, slot, books_owned, books_required')
+        .eq('exchange_status', 'pending');
+
+      if (slot) {
+        query = query.eq('slot', slot);
+      }
+
+      const { data: students, error } = await query;
+      if (error) throw error;
+
+      if (!students || students.length === 0) return [];
+
+      const userIds = students.map(s => s.user_id);
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('user_id, full_name, email')
+        .in('user_id', userIds);
+
+      return students.map(student => {
+        const profile = profiles?.find(p => p.user_id === student.user_id);
+        return {
+          ...student,
+          full_name: profile?.full_name || 'Unknown',
+          email: profile?.email || '',
+        };
+      });
+    },
+  });
+};
+
+// Create manual match
+export const useCreateManualMatch = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ 
+      student1Id, 
+      student2Id 
+    }: { 
+      student1Id: string; 
+      student2Id: string;
+    }) => {
+      // Get current semester info
+      const { data: semesterData, error: semesterError } = await supabase
+        .rpc('get_current_semester');
+
+      if (semesterError) throw semesterError;
+      
+      const semester = semesterData?.[0]?.semester || 'even';
+      const academicYear = semesterData?.[0]?.academic_year || '2025-2026';
+
+      // Create the match
+      const { data: match, error: matchError } = await supabase
+        .from('exchange_matches')
+        .insert({
+          student_1_id: student1Id,
+          student_2_id: student2Id,
+          match_status: 'matched',
+          semester,
+          academic_year: academicYear,
+          matched_at: new Date().toISOString(),
+        })
+        .select()
+        .single();
+
+      if (matchError) throw matchError;
+
+      // Update both students' exchange status
+      await supabase
+        .from('student_academic_info')
+        .update({ exchange_status: 'matched' })
+        .in('user_id', [student1Id, student2Id]);
+
+      // Log action
+      await supabase.rpc('log_admin_action', {
+        _action_type: 'MANUAL_MATCH_CREATED',
+        _action_description: 'Manual exchange match created by admin',
+        _target_match_id: match.id,
+        _metadata: JSON.stringify({ student1Id, student2Id }),
+      });
+
+      return match;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-all-matches'] });
+      queryClient.invalidateQueries({ queryKey: ['admin-eligible-students'] });
+      queryClient.invalidateQueries({ queryKey: ['admin-stats'] });
+      queryClient.invalidateQueries({ queryKey: ['admin-action-logs'] });
+      toast.success('Manual match created successfully');
+    },
+    onError: (error) => {
+      toast.error('Failed to create match: ' + error.message);
+    },
+  });
+};
+
 // Fetch students with filters
 export const useFilteredStudents = (filters: StudentFilters) => {
   return useQuery({
