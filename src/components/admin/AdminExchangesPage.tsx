@@ -3,6 +3,7 @@ import {
   useAllExchangeMatches, 
   useCancelMatch, 
   useCompleteMatch,
+  useRestoreMatch,
   useSystemSettings,
   useUpdateSystemSetting
 } from '@/hooks/useAdminData';
@@ -50,11 +51,13 @@ const AdminExchangesPage = () => {
   const [selectedMatch, setSelectedMatch] = useState<string | null>(null);
   const [actionType, setActionType] = useState<'cancel' | 'complete' | null>(null);
   const [showManualMatch, setShowManualMatch] = useState(false);
+  const [restoreMatchId, setRestoreMatchId] = useState<string | null>(null);
 
   const { data: matches, isLoading: matchesLoading } = useAllExchangeMatches(statusFilter);
   const { data: settings } = useSystemSettings();
   const cancelMatch = useCancelMatch();
   const completeMatch = useCompleteMatch();
+  const restoreMatch = useRestoreMatch();
   const updateSetting = useUpdateSystemSetting();
 
   const matchingEnabled = settings?.find(s => s.key === 'matching_engine_enabled')?.value === 'true';
@@ -289,6 +292,17 @@ const AdminExchangesPage = () => {
                             </>
                           )}
                         </div>
+                        {match.match_status === 'cancelled' && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="h-8"
+                            onClick={() => setRestoreMatchId(match.id)}
+                          >
+                            <ArrowLeftRight className="w-3 h-3 mr-1" />
+                            Restore
+                          </Button>
+                        )}
                       </TableCell>
                     </TableRow>
                   ))
@@ -325,6 +339,37 @@ const AdminExchangesPage = () => {
               className={actionType === 'cancel' ? 'bg-destructive hover:bg-destructive/90' : ''}
             >
               {actionType === 'cancel' ? 'Yes, Cancel Match' : 'Yes, Complete Match'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Restore Match Confirmation Dialog */}
+      <AlertDialog 
+        open={!!restoreMatchId} 
+        onOpenChange={() => setRestoreMatchId(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Restore Cancelled Match?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will restore the cancelled match and set both students' status back to "matched".
+              They will be able to continue with their exchange.
+              <br /><br />
+              This action will be logged for transparency.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (restoreMatchId) {
+                  restoreMatch.mutate(restoreMatchId);
+                  setRestoreMatchId(null);
+                }
+              }}
+            >
+              Yes, Restore Match
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

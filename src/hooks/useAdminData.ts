@@ -236,6 +236,98 @@ export const useCreateManualMatch = () => {
   });
 };
 
+// Restore cancelled match
+export const useRestoreMatch = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (matchId: string) => {
+      const { data: match, error: fetchError } = await supabase
+        .from('exchange_matches')
+        .select('student_1_id, student_2_id')
+        .eq('id', matchId)
+        .single();
+
+      if (fetchError) throw fetchError;
+
+      const { error: updateError } = await supabase
+        .from('exchange_matches')
+        .update({ match_status: 'matched' })
+        .eq('id', matchId);
+
+      if (updateError) throw updateError;
+
+      await supabase
+        .from('student_academic_info')
+        .update({ exchange_status: 'matched' })
+        .in('user_id', [match.student_1_id, match.student_2_id]);
+
+      await supabase.rpc('log_admin_action', {
+        _action_type: 'MATCH_RESTORED',
+        _action_description: 'Cancelled exchange match restored by admin',
+        _target_match_id: matchId,
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-all-matches'] });
+      queryClient.invalidateQueries({ queryKey: ['admin-stats'] });
+      queryClient.invalidateQueries({ queryKey: ['admin-action-logs'] });
+      queryClient.invalidateQueries({ queryKey: ['admin-eligible-students'] });
+      toast.success('Match restored successfully');
+    },
+    onError: (error) => {
+      toast.error('Failed to restore match: ' + error.message);
+    },
+  });
+};
+
+// Update student slot
+export const useUpdateStudentSlot = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ userId, newSlot }: { userId: string; newSlot: number }) => {
+      const { data: booksOwned, error: ownedError } = await supabase
+        .rpc('get_books_owned', { slot_num: newSlot });
+      
+      if (ownedError) throw ownedError;
+
+      const { data: booksRequired, error: requiredError } = await supabase
+        .rpc('get_books_required', { slot_num: newSlot });
+      
+      if (requiredError) throw requiredError;
+
+      const { error: updateError } = await supabase
+        .from('student_academic_info')
+        .update({ 
+          slot: newSlot,
+          books_owned: booksOwned || [],
+          books_required: booksRequired || [],
+        })
+        .eq('user_id', userId);
+
+      if (updateError) throw updateError;
+
+      await supabase.rpc('log_admin_action', {
+        _action_type: 'SLOT_CHANGED',
+        _action_description: `Student slot changed to Slot ${newSlot}`,
+        _target_user_id: userId,
+        _metadata: JSON.stringify({ newSlot }),
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-all-users'] });
+      queryClient.invalidateQueries({ queryKey: ['admin-filtered-students'] });
+      queryClient.invalidateQueries({ queryKey: ['admin-eligible-students'] });
+      queryClient.invalidateQueries({ queryKey: ['admin-action-logs'] });
+      toast.success('Student slot updated successfully');
+    },
+    onError: (error) => {
+      toast.error('Failed to update slot: ' + error.message);
+    },
+  });
+};
+
 // Fetch students with filters
 export const useFilteredStudents = (filters: StudentFilters) => {
   return useQuery({
