@@ -31,7 +31,7 @@
  const AssignTimeSlotDialog = ({ open, onOpenChange, match }: AssignTimeSlotDialogProps) => {
    const [selectedTimeSlot, setSelectedTimeSlot] = useState<string>('');
    const [selectedLocation, setSelectedLocation] = useState<string>('');
-   const [notifyStudents, setNotifyStudents] = useState(true);
+  const [notifyStudents, setNotifyStudents] = useState(true);
  
    const { data: timeSlots } = useAvailableTimeSlots();
    const { data: locations } = useAvailableLocations();
@@ -40,8 +40,8 @@
  
    useEffect(() => {
      if (match) {
-       setSelectedTimeSlot(match.time_slot_id || '');
-       setSelectedLocation(match.location_id || '');
+      setSelectedTimeSlot(match.time_slot_id || 'none');
+      setSelectedLocation(match.location_id || 'none');
      }
    }, [match]);
  
@@ -50,11 +50,11 @@
  
      await assignTimeSlot.mutateAsync({
        matchId: match.id,
-       timeSlotId: selectedTimeSlot || null,
-       locationId: selectedLocation || null,
+      timeSlotId: selectedTimeSlot === 'none' ? null : selectedTimeSlot || null,
+      locationId: selectedLocation === 'none' ? null : selectedLocation || null,
      });
  
-     if (notifyStudents && selectedTimeSlot && selectedLocation) {
+    if (notifyStudents && selectedTimeSlot && selectedTimeSlot !== 'none' && selectedLocation && selectedLocation !== 'none') {
        const selectedSlot = timeSlots?.find(t => t.id === selectedTimeSlot);
        const selectedLoc = locations?.find(l => l.id === selectedLocation);
        
@@ -71,8 +71,8 @@
    };
  
    const handleClose = () => {
-     setSelectedTimeSlot('');
-     setSelectedLocation('');
+    setSelectedTimeSlot('none');
+    setSelectedLocation('none');
      setNotifyStudents(true);
      onOpenChange(false);
    };
@@ -119,10 +119,12 @@
                </Label>
                <Select value={selectedTimeSlot} onValueChange={setSelectedTimeSlot}>
                  <SelectTrigger>
-                   <SelectValue placeholder="Select a time slot" />
+                  <SelectValue placeholder="Select a time slot">
+                    {selectedTimeSlot === 'none' ? 'No time slot' : undefined}
+                  </SelectValue>
                  </SelectTrigger>
                  <SelectContent>
-                   <SelectItem value="">No time slot</SelectItem>
+                  <SelectItem value="none">No time slot</SelectItem>
                    {timeSlots?.map(slot => (
                      <SelectItem key={slot.id} value={slot.id}>
                        <div className="flex items-center gap-2">
@@ -148,10 +150,12 @@
                </Label>
                <Select value={selectedLocation} onValueChange={setSelectedLocation}>
                  <SelectTrigger>
-                   <SelectValue placeholder="Select a location" />
+                  <SelectValue placeholder="Select a location">
+                    {selectedLocation === 'none' ? 'No location' : undefined}
+                  </SelectValue>
                  </SelectTrigger>
                  <SelectContent>
-                   <SelectItem value="">No location</SelectItem>
+                  <SelectItem value="none">No location</SelectItem>
                    {locations?.map(loc => (
                      <SelectItem key={loc.id} value={loc.id}>
                        {loc.name}
