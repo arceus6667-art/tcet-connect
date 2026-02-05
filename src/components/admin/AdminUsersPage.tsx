@@ -4,6 +4,7 @@ import {
   useFilteredStudents, 
   useUpdateUserStatus, 
   useUpdateUserRole,
+  useUpdateStudentSlot,
   type StudentFilters 
 } from '@/hooks/useAdminData';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -35,7 +36,8 @@ import {
   Shield, 
   GraduationCap, 
   BookOpen,
-  MoreVertical
+  MoreVertical,
+  ArrowLeftRight
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -54,6 +56,8 @@ const AdminUsersPage = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedUser, setSelectedUser] = useState<{ userId: string; action: 'role' | 'status' } | null>(null);
   const [newRole, setNewRole] = useState<'student' | 'teacher' | 'admin'>('student');
+  const [slotChangeUser, setSlotChangeUser] = useState<{ userId: string; currentSlot: number } | null>(null);
+  const [newSlot, setNewSlot] = useState<number>(1);
 
   const { data: allUsers, isLoading: usersLoading } = useAllUsers(roleFilter);
   const { data: filteredStudents, isLoading: studentsLoading } = useFilteredStudents({
@@ -62,6 +66,7 @@ const AdminUsersPage = () => {
   });
   const updateUserStatus = useUpdateUserStatus();
   const updateUserRole = useUpdateUserRole();
+  const updateStudentSlot = useUpdateStudentSlot();
 
   const displayUsers = roleFilter === 'student' && (studentFilters.slot || studentFilters.branch || studentFilters.exchange_status)
     ? filteredStudents
@@ -86,6 +91,15 @@ const AdminUsersPage = () => {
     }
   };
 
+  const handleUpdateSlot = () => {
+    if (slotChangeUser) {
+      updateStudentSlot.mutate({ 
+        userId: slotChangeUser.userId, 
+        newSlot 
+      });
+      setSlotChangeUser(null);
+    }
+  };
   const getRoleBadge = (role: string | null, isApproved: boolean) => {
     if (!role) return <Badge variant="outline">No Role</Badge>;
     
@@ -283,6 +297,15 @@ const AdminUsersPage = () => {
                               <Shield className="w-4 h-4 mr-2" />
                               Change Role
                             </DropdownMenuItem>
+                            {user.role === 'student' && user.slot && (
+                              <DropdownMenuItem onClick={() => {
+                                setSlotChangeUser({ userId: user.user_id, currentSlot: user.slot! });
+                                setNewSlot(user.slot === 1 ? 2 : 1);
+                              }}>
+                                <ArrowLeftRight className="w-4 h-4 mr-2" />
+                                Change Slot
+                              </DropdownMenuItem>
+                            )}
                             <DropdownMenuSeparator />
                             <DropdownMenuItem 
                               onClick={() => handleToggleStatus(user.user_id, user.is_active)}
@@ -337,6 +360,55 @@ const AdminUsersPage = () => {
             <Button variant="outline" onClick={() => setSelectedUser(null)}>Cancel</Button>
             <Button onClick={handleUpdateRole} disabled={updateUserRole.isPending}>
               {updateUserRole.isPending ? 'Updating...' : 'Update Role'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Slot Change Dialog */}
+      <Dialog open={!!slotChangeUser} onOpenChange={() => setSlotChangeUser(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Change Student Slot</DialogTitle>
+            <DialogDescription>
+              Changing the slot will also update the student's book ownership and requirements.
+              <br /><br />
+              <strong>Current Slot:</strong> Slot {slotChangeUser?.currentSlot}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4 space-y-4">
+            <Select value={newSlot.toString()} onValueChange={(v) => setNewSlot(parseInt(v))}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="1">Slot 1</SelectItem>
+                <SelectItem value="2">Slot 2</SelectItem>
+              </SelectContent>
+            </Select>
+            <div className="text-sm text-muted-foreground p-3 bg-muted rounded-lg">
+              {newSlot === 1 ? (
+                <>
+                  <p className="font-medium mb-1">Slot 1 Books:</p>
+                  <p><strong>Owns:</strong> Engineering Mechanics, Chemistry, PPS, IKS</p>
+                  <p><strong>Needs:</strong> Physics, BEE, EGD, English</p>
+                </>
+              ) : (
+                <>
+                  <p className="font-medium mb-1">Slot 2 Books:</p>
+                  <p><strong>Owns:</strong> Physics, BEE, EGD, English</p>
+                  <p><strong>Needs:</strong> Engineering Mechanics, Chemistry, PPS, IKS</p>
+                </>
+              )}
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setSlotChangeUser(null)}>Cancel</Button>
+            <Button 
+              onClick={handleUpdateSlot} 
+              disabled={updateStudentSlot.isPending || newSlot === slotChangeUser?.currentSlot}
+            >
+              {updateStudentSlot.isPending ? 'Updating...' : 'Update Slot'}
             </Button>
           </DialogFooter>
         </DialogContent>
