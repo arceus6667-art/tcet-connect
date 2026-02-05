@@ -5,9 +5,12 @@ import {
   useCompleteMatch,
   useRestoreMatch,
   useSystemSettings,
-  useUpdateSystemSetting
+  useUpdateSystemSetting,
+  type ExchangeMatchWithDetails
 } from '@/hooks/useAdminData';
 import ManualMatchDialog from './ManualMatchDialog';
+import AssignTimeSlotDialog from './AssignTimeSlotDialog';
+import SendNotificationDialog from './SendNotificationDialog';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -42,7 +45,8 @@ import {
   Play,
   Pause,
   Settings,
-  Plus
+  Plus,
+  Bell
 } from 'lucide-react';
 import { format } from 'date-fns';
 
@@ -52,6 +56,8 @@ const AdminExchangesPage = () => {
   const [actionType, setActionType] = useState<'cancel' | 'complete' | null>(null);
   const [showManualMatch, setShowManualMatch] = useState(false);
   const [restoreMatchId, setRestoreMatchId] = useState<string | null>(null);
+  const [assignMatch, setAssignMatch] = useState<ExchangeMatchWithDetails | null>(null);
+  const [notifyMatch, setNotifyMatch] = useState<ExchangeMatchWithDetails | null>(null);
 
   const { data: matches, isLoading: matchesLoading } = useAllExchangeMatches(statusFilter);
   const { data: settings } = useSystemSettings();
@@ -303,6 +309,27 @@ const AdminExchangesPage = () => {
                             Restore
                           </Button>
                         )}
+                        {match.match_status !== 'cancelled' && match.match_status !== 'completed' && (
+                          <>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="h-8"
+                              onClick={() => setAssignMatch(match)}
+                            >
+                              <Calendar className="w-3 h-3 mr-1" />
+                              Schedule
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="h-8"
+                              onClick={() => setNotifyMatch(match)}
+                            >
+                              <Bell className="w-3 h-3" />
+                            </Button>
+                          </>
+                        )}
                       </TableCell>
                     </TableRow>
                   ))
@@ -379,6 +406,20 @@ const AdminExchangesPage = () => {
       <ManualMatchDialog 
         open={showManualMatch} 
         onOpenChange={setShowManualMatch} 
+      />
+
+      {/* Assign Time Slot Dialog */}
+      <AssignTimeSlotDialog
+        open={!!assignMatch}
+        onOpenChange={(open) => !open && setAssignMatch(null)}
+        match={assignMatch}
+      />
+
+      {/* Send Notification Dialog */}
+      <SendNotificationDialog
+        open={!!notifyMatch}
+        onOpenChange={(open) => !open && setNotifyMatch(null)}
+        match={notifyMatch}
       />
     </div>
   );

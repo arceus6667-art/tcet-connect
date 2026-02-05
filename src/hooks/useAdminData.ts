@@ -35,6 +35,8 @@ export interface ExchangeMatchWithDetails {
   semester: string;
   academic_year: string;
   matched_at: string;
+  time_slot_id?: string;
+  location_id?: string;
   time_slot_date?: string;
   time_slot_period?: string;
   location_name?: string;
@@ -122,6 +124,139 @@ export const useAllUsers = (roleFilter?: string) => {
 };
 
 // Fetch eligible students for manual matching
+// Fetch available time slots
+export const useAvailableTimeSlots = () => {
+  return useQuery({
+    queryKey: ['available-time-slots'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('exchange_time_slots')
+        .select(`
+          id,
+          date,
+          start_time,
+          end_time,
+          period,
+          max_exchanges,
+          current_exchanges,
+          location_id
+        `)
+        .eq('is_active', true)
+        .gte('date', new Date().toISOString().split('T')[0])
+        .order('date', { ascending: true });
+
+      if (error) throw error;
+      return data || [];
+    },
+  });
+};
+
+// Fetch available locations
+export const useAvailableLocations = () => {
+  return useQuery({
+    queryKey: ['available-locations'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('exchange_locations')
+        .select('id, name, description')
+        .eq('is_active', true);
+
+      if (error) throw error;
+      return data || [];
+    },
+  });
+};
+
+// Assign time slot and location to a match
+export const useAssignTimeSlot = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ 
+      matchId, 
+      timeSlotId, 
+      locationId 
+    }: { 
+      matchId: string; 
+      timeSlotId: string | null;
+      locationId: string | null;
+    }) => {
+      const { error } = await supabase
+        .from('exchange_matches')
+        .update({ 
+          time_slot_id: timeSlotId,
+          location_id: locationId,
+        })
+        .eq('id', matchId);
+
+      if (error) throw error;
+
+      await supabase.rpc('log_admin_action', {
+        _action_type: 'TIME_SLOT_ASSIGNED',
+        _action_description: 'Time slot and location assigned to match',
+        _target_match_id: matchId,
+        _metadata: JSON.stringify({ timeSlotId, locationId }),
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-all-matches'] });
+      queryClient.invalidateQueries({ queryKey: ['admin-action-logs'] });
+      toast.success('Time slot assigned successfully');
+    },
+    onError: (error) => {
+      toast.error('Failed to assign time slot: ' + error.message);
+    },
+  });
+};
+
+// Send notification to students
+export const useSendNotification = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ 
+      userIds, 
+      title, 
+      message, 
+      type = 'info',
+      matchId 
+    }: { 
+      userIds: string[]; 
+      title: string;
+      message: string;
+      type?: string;
+      matchId?: string;
+    }) => {
+      const notifications = userIds.map(userId => ({
+        user_id: userId,
+        title,
+        message,
+        type,
+        match_id: matchId || null,
+      }));
+
+      const { error } = await supabase
+        .from('notifications')
+        .insert(notifications);
+
+      if (error) throw error;
+
+      await supabase.rpc('log_admin_action', {
+        _action_type: 'NOTIFICATION_SENT',
+        _action_description: `Notification sent to ${userIds.length} user(s): ${title}`,
+        _metadata: JSON.stringify({ userIds, title }),
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-action-logs'] });
+      toast.success('Notification sent successfully');
+    },
+    onError: (error) => {
+      toast.error('Failed to send notification: ' + error.message);
+    },
+  });
+};
+
 export interface EligibleStudent {
   user_id: string;
   full_name: string;
